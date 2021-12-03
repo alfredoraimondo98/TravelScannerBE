@@ -4,7 +4,7 @@ const mysql = require('mysql2');
 /*
     const pool = mysql.createPool({
     host: 'localhost',
-    database: 'ilmonaco',
+    database: '',
     user: 'root',
     password: 'admin',
     //debug :true
@@ -12,14 +12,14 @@ const mysql = require('mysql2');
 */ 
 
 /* HEROKU CONNECTION CLEARDB */
-/*
+
 const pool = mysql.createPool({
     host: 'eu-cdbr-west-01.cleardb.com',
-    database: 'heroku_4bb05fc1cdbaab4',
-    user: 'b458910b5789bd',
-    password: '10ec26b0'
+    database: 'heroku_a860383571f3622',
+    user: 'bc5bbee6693926',
+    password: '17e674c4'
 });
-*/
+
 
 module.exports = pool.promise();
 

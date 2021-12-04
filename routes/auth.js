@@ -23,7 +23,6 @@ router.post('/login',
         body('email').isEmail().withMessage('Inserisci una mail valida name@server.com'),
         body('password').trim().isLength({ min : 8}).matches('^(?=.*[0-9])(?=.*[a-zA-Z])([a-zA-Z0-9]+){8,255}').withMessage('Inserisci una password valida'),
     ],
-    authController.login
-    )
+    authController.login)
 
 module.exports = router;

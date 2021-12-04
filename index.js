@@ -24,6 +24,6 @@ app.use(express.static('public')) //rende accessibile la cartella public (per le
 
 
 
-app.listen(3000, () => console.log("server start")); //localhost porta 3000
+//app.listen(3000, () => console.log("server start")); //localhost porta 3000
 
-//app.listen(process.env.PORT || 35540, () => console.log("server start on "+ process.env.PORT)); //heroku
+app.listen(process.env.PORT || 35540, () => console.log("server start on "+ process.env.PORT)); //heroku

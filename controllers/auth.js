@@ -4,7 +4,13 @@ const { validationResult } = require('express-validator');
 const query = require('../utils/queries')
 
 
-
+/**
+ * Registrazione utente
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * @returns 
+ */
 exports.register = async (req, res, next) => {
 
     const errors = validationResult(req);
@@ -22,7 +28,6 @@ exports.register = async (req, res, next) => {
     var password = await bcrypt.hash(req.body.password, 12); //cripta password
     var dataDiNascita = req.body.data_di_nascita;
     var badge = "tipo gamification"; //badge che rappresenta la tipologia di utente (da definire)
-
   
 
     if(await verifyMail(email)){ //se la mail è già presente viene restituito TRUE e non si può procedere alla registrazione
@@ -59,6 +64,69 @@ exports.register = async (req, res, next) => {
 
     
 }
+
+
+
+/**
+ * login utente
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * @returns 
+ */
+exports.login = async (req, res, next) => {
+
+    const errors = validationResult(req);
+
+    if(!errors.isEmpty()){ //verifica parametri sulla base dei controlli inseriti come middleware nella routes
+        return res.status(422).json({
+            message : 'Error input Parametri',
+            error : errors.array()
+        });
+    }
+
+    let email =  req.body.email;
+    let password = req.body.password;
+
+    let loginUser;
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    try{ 
+        const [rows, field] = await database.query(query.getUserByEmail, [email]);
+        loginUser = rows[0];
+
+        //Verifica se l'utente è presente
+        if(!loginUser){
+            return res.status(401).json({
+                message : 'Non autorizzato: email errata!'
+            })
+        }
+
+        //Verifica password
+        if(! (await bcrypt.compare(password, loginUser.password)) ){ //Verifica se le due password non corrispondono
+            return res.status(401).json({
+                message : 'Non autorizzato: password errata!' //nega l'accesso
+            })
+        }
+
+
+        res.status(201).json({ 
+            mess : "accesso consentito"
+        });
+    }
+    catch(err) {
+
+        return res.status(422).json({
+            message : err
+        });
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    };
+}
+
+
+
 
 
 

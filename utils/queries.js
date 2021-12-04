@@ -2,7 +2,7 @@ module.exports = {
 
     getUserByEmail: "SELECT * FROM utente WHERE email = ?",
 
-    insertUser : "INSERT INTO utente (nome, cognome, email, password, data_di_nascita, badge) VALUES (?, ?, ?, ?, ?, ?)",
+    insertUser : "INSERT INTO utente (nome, cognome, email, password, data_di_nascita, badge, img) VALUES (?, ?, ?, ?, ?, ?, ?)",
 
 
 

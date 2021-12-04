@@ -2,7 +2,7 @@ const database = require('../utils/database');
 const bcrypt = require('bcryptjs');
 const { validationResult } = require('express-validator');
 const query = require('../utils/queries')
-
+const service = require('../utils/service');
 
 /**
  * Registrazione utente
@@ -28,7 +28,11 @@ exports.register = async (req, res, next) => {
     var password = await bcrypt.hash(req.body.password, 12); //cripta password
     var dataDiNascita = req.body.data_di_nascita;
     var badge = "tipo gamification"; //badge che rappresenta la tipologia di utente (da definire)
-  
+    var img; //immagine profilo utente
+
+    if(req.file){ //Se presente la foto
+        img = req.file.path.slice(6); //recupera path relativo dell'img (in req.file) 
+    }
 
     if(await verifyMail(email)){ //se la mail è già presente viene restituito TRUE e non si può procedere alla registrazione
         res.status(401).json({
@@ -43,7 +47,7 @@ exports.register = async (req, res, next) => {
         }); */
     
         try {
-            const [rows, field] = await connection.query(query.insertUser, [nome, cognome, email, password, dataDiNascita, badge]); //Creazione utente
+            const [rows, field] = await connection.query(query.insertUser, [nome, cognome, email, password, dataDiNascita, badge, img]); //Creazione utente
 
             res.status(201).json({
                 mess : 'utente inserito correttamente'
@@ -60,9 +64,7 @@ exports.register = async (req, res, next) => {
         finally{
             await connection.release(); //rilascia la connessione al termine delle operazioni 
         }
-    }
-
-    
+    }    
 }
 
 
@@ -111,7 +113,14 @@ exports.login = async (req, res, next) => {
 
 
         res.status(201).json({ 
-            mess : "accesso consentito"
+            id_utente : loginUser.id_utente,
+            email : loginUser.email,
+            password : loginUser.password,
+            nome : loginUser.nome,
+            cognome : loginUser.cognome,
+            data_di_nascita : loginUser.data_di_nascita,
+            badge : loginUser.badge,
+            img : service.server + loginUser.img
         });
     }
     catch(err) {

@@ -15,5 +15,6 @@ router.post('/createLuogo',
 
 
 
+router.get('/getAllLuoghi', luogoController.getAllLuoghi)
 
 module.exports = router;

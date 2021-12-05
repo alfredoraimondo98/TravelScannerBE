@@ -1,6 +1,14 @@
 module.exports = { 
 
     getUserByEmail: "SELECT * FROM utente WHERE email = ?",
+    getAllLuoghi : "SELECT * FROM luogo",
+    
+    getLuogoCard : `SELECT luogo.id_luogo, luogo.titolo, luogo.citta, luogo.nazione, luogo.data_creazione, esperienza.foto_copertina, esperienza.count_foto_copertina, esperienza.data_creazione as data_creazione_esperienza
+                    FROM luogo JOIN esperienza 
+                    ON luogo.id_luogo = esperienza.id_luogo
+                    WHERE luogo.id_luogo = ?
+                    ORDER BY count_foto_copertina DESC, data_creazione_esperienza DESC`, //Restituisce i dati per una card di un luogo con la foto_copertina più votata in prima posizione nel risultato
+
 
     insertUser : "INSERT INTO utente (nome, cognome, email, password, data_di_nascita, badge, img) VALUES (?, ?, ?, ?, ?, ?, ?)",
     insertLuogo : "INSERT INTO luogo (titolo, posizione, citta, nazione, id_utente, data_creazione) VALUES (?, ?, ?, ?, ?, ?)",

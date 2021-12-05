@@ -127,3 +127,61 @@ async function verifyLuogo(titolo){
         return true; //luogo già presente: non può procedere alla creazione;
     }
 }
+
+
+
+
+
+
+/**
+ * restituisce tutti i luoghi per la visualizzazione della card (foto_copertina, titolo, città, nazione)
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * @returns 
+ */
+exports.getAllLuoghi = async (req, res, next) =>{
+    
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    await connection.beginTransaction(async function (err) { //avvia una nuova transazione
+        if (err) { throw err; }
+    });
+
+
+    var allLuoghi;
+    var luoghiCard = [];
+
+    try {
+    
+        const [rows_allLuoghi, field_allLuoghi] = await connection.query(query.getAllLuoghi); //recupera tutti i luoghi
+        allLuoghi = rows_allLuoghi;
+
+        await allLuoghi.forEach( async (luogo) => {
+            const [rows_luogo, field_luogo] = await connection.query(query.getLuogoCard, [luogo.id_luogo]); //recupera tutti i luoghi memorizzati
+            luoghiCard.push(rows_luogo[0]); //recupera il luogo con foto_copertina più votata e più recente
+        })
+        
+        await connection.commit(); //effettua il commit delle transazioni
+
+        //console.log("*** ", luoghiCard)
+
+        res.status(201).json({
+            luoghi : luoghiCard
+        })
+            
+    }
+    catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+        await connection.rollback(); //effettua il commit delle transazioni
+
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
+}
+
+

@@ -127,3 +127,130 @@ async function verifyLuogo(titolo){
         return true; //luogo già presente: non può procedere alla creazione;
     }
 }
+
+
+
+
+
+
+/**
+ * restituisce tutti i luoghi per la visualizzazione della card (foto_copertina, titolo, città, nazione)
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * @returns 
+ */
+exports.getAllLuoghi = async (req, res, next) =>{
+    
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    await connection.beginTransaction(async function (err) { //avvia una nuova transazione
+        if (err) { throw err; }
+    });
+
+
+    var allLuoghi;
+    var luoghiCard = [];
+
+    try {
+    
+        const [rows_allLuoghi, field_allLuoghi] = await connection.query(query.getAllLuoghi); //recupera tutti i luoghi
+        allLuoghi = rows_allLuoghi;
+
+        await allLuoghi.forEach( async (luogo) => {
+            const [rows_luogo, field_luogo] = await connection.query(query.getLuogoCard, [luogo.id_luogo]); //recupera tutti i luoghi memorizzati
+            luoghiCard.push(rows_luogo[0]); //recupera il luogo con foto_copertina più votata e più recente
+        })
+        
+        await connection.commit(); //effettua il commit delle transazioni
+
+        //console.log("*** ", luoghiCard)
+
+        res.status(201).json({
+            luoghi : luoghiCard
+        })
+            
+    }
+    catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+        await connection.rollback(); //effettua il commit delle transazioni
+
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
+}
+
+
+
+/**
+ * Restituisce un luogo dato il suo id con le informazioni (descrizione, fotocopertina, accessibilita, gallery) più votate
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ */
+exports.getLuogo = async (req, res, next) => {
+
+    var idLuogo = req.body.id_luogo;
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+     
+    try {
+    
+        const [rows_luogo, field_luogo] = await connection.query(query.getLuogoById, [idLuogo]); //recupera tutti i luoghi
+        var luogo = rows_luogo[0];
+
+        const [rows_descrizione, field_descrizione] = await connection.query(query.getDescrizioneByLuogo, [idLuogo]); //recupera la descrizione
+        var descrizione = rows_descrizione[0];
+
+        const [rows_accessibilita, field_accessibilita] = await connection.query(query.getAccessibilitaByLuogo, [idLuogo]); //recupera l'accessibilita
+        var accessibilita = rows_accessibilita[0];
+
+        const [rows_fotoCopertina, field_fotoCopertina] = await connection.query(query.getFotoCopertinaByLuogo, [idLuogo]); //recupera la fotoCopertina
+        var fotoCopertina = rows_fotoCopertina[0];
+
+
+        //*** DATI OPZIONALI (Non necessariamente sono presenti) */
+
+        const [rows_orari, field_orari] = await connection.query(query.getOrariByLuogo, [idLuogo]); //recupera gli orari di apertura per il luogo
+        var orari = rows_orari[0];
+
+        const [rows_costo, field_costo] = await connection.query(query.getCostoByLuogo, [idLuogo]); //recupera i costi per il luogo
+        var costo = rows_costo[0];
+
+
+        var LuogoInfo = {
+            id_luogo : luogo.id_luogo,
+            titolo : luogo.titolo,
+            posizione : luogo.posizione,
+            citta : luogo.citta,
+            nazione : luogo.nazione,
+            foto_copertina : fotoCopertina.foto_copertina,
+            descrizione : descrizione.descrizione,
+            accessibilita : accessibilita.accessibilita,
+            orari_di_apertura : orari, //se presenti
+            costo : costo //se presenti
+        }
+
+        
+        res.status(201).json({
+            luogo : LuogoInfo
+        })
+            
+    }
+    catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+ 
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
+
+
+}

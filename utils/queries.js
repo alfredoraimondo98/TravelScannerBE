@@ -2,7 +2,13 @@ module.exports = {
 
     getUserByEmail: "SELECT * FROM utente WHERE email = ?",
     getAllLuoghi : "SELECT * FROM luogo",
-    
+    getLuogoById : "SELECT * FROM luogo WHERE id_luogo = ?", 
+    getDescrizioneByLuogo : "SELECT id_esperienza, descrizione, count_descrizione, data_creazione FROM esperienza WHERE id_luogo = ? ORDER BY data_creazione DESC, count_descrizione DESC", //Restituisce la descrizione con voto (count) più alto per il luogo
+    getFotoCopertinaByLuogo : "SELECT id_esperienza, foto_copertina, count_foto_copertina, data_creazione FROM esperienza WHERE id_luogo = ? ORDER BY data_creazione DESC, foto_copertina DESC", //Restituisce la foto copertina con voto (count) più alto per il luogo
+    getAccessibilitaByLuogo : "SELECT id_esperienza, accessibilita, count_accessibilita, data_creazione FROM esperienza WHERE id_luogo = ? ORDER BY data_creazione DESC, count_accessibilita DESC", // Restituisce l'accessibilita con voto (count) più alto per il luogo
+    getOrariByLuogo : "SELECT orario_apertura, orario_chiusura FROM orari_di_apertura WHERE id_luogo = ?",
+    getCostoByLuogo : "SELECT costo_minimo, costo_massimo FROM costo WHERE id_luogo = ?",
+
     getLuogoCard : `SELECT luogo.id_luogo, luogo.titolo, luogo.citta, luogo.nazione, luogo.data_creazione, esperienza.foto_copertina, esperienza.count_foto_copertina, esperienza.data_creazione as data_creazione_esperienza
                     FROM luogo JOIN esperienza 
                     ON luogo.id_luogo = esperienza.id_luogo

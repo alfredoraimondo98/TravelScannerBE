@@ -14,6 +14,7 @@ module.exports = {
                     ON luogo.id_luogo = esperienza.id_luogo
                     WHERE luogo.id_luogo = ?
                     ORDER BY count_foto_copertina DESC, data_creazione_esperienza DESC`, //Restituisce i dati per una card di un luogo con la foto_copertina più votata in prima posizione nel risultato
+    getNumVotiFotoCopertina: 'SELECT count_foto_copertina from esperienza WHERE id_esperienza = ?',
 
 
     insertUser : "INSERT INTO utente (nome, cognome, email, password, data_di_nascita, badge, img) VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -27,5 +28,8 @@ module.exports = {
 
     verifyMail : "SELECT email FROM utente WHERE email = ?",
     verifyLuogo : "SELECT titolo FROM luogo WHERE titolo = ?",
-    verifyVoto : "SELECT voto FROM voto WHERE id_utente = ? AND id_esperienza = ?"
+    verifyVoto : "SELECT voto FROM voto WHERE id_utente = ? AND id_esperienza = ?",
+    verifyVotoFotoCopertina : "SELECT voto FROM voto WHERE id_utente = ? AND id_esperienza = ? AND tipo_voto = ?",
+
+    updateNumVotiFotoCopertina: "UPDATE esperienza SET count_foto_copertina = ? WHERE id_esperienza= ?"
 }

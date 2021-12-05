@@ -34,7 +34,7 @@ exports.createLuogo = async (req, res, next) =>{
 
     // ** Data creazione (da inserire in LUOGO e in ESPERIENZA)
     dataCreazione = format(new Date(), 'YYYY-MM-DD');
-    console.log("*** DATA, ", dataCreazione)
+    //console.log("*** DATA, ", dataCreazione)
 
     // ** dati per la creazione della prima esperienza (ricevuti in input)
     var descrizione = req.body.descrizione;

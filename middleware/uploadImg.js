@@ -11,7 +11,7 @@ const storage = multer.diskStorage({ //setting multer
 })
 
 const fileFilter = ((req, file, callback) => { //definizione tipi di file validi 
-    if(file.mimetype == 'image/pgn' || file.mimetype == 'image/jpg' || file.mimetype == 'image/jpeg' || file.mimetype == 'image/jfif'){
+    if(file.mimetype == 'image/png' || file.mimetype == 'image/jpg' || file.mimetype == 'image/jpeg' || file.mimetype == 'image/jfif'){
         callback(null, true); //restituisce true se il file ricevuto è di un tipo valido
     }
     else{

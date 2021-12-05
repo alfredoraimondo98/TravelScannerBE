@@ -20,6 +20,10 @@ app.use('/auth', auth);
 const luogo = require('./routes/luogo');
 app.use('/luogo', luogo);
 
+const esperienza = require('./routes/esperienza');
+app.use('/esperienza', esperienza);
+
+
 app.use(express.static('public')) //rende accessibile la cartella public (per le immagini)
 
 

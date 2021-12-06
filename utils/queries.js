@@ -49,7 +49,7 @@ module.exports = {
                                 FROM gallery JOIN foto ON gallery.id_gallery = foto.id_gallery 
                                 WHERE gallery.id_esperienza = ? `, //recupera la gallery di foto di una data esperienza
 
-     
+    getLastUsersPhoto : `SELECT id_utente, img FROM utente ORDER BY id_utente DESC`, //recupera le foto degli utenti 
 
     insertUser : "INSERT INTO utente (nome, cognome, email, password, data_di_nascita, badge, img) VALUES (?, ?, ?, ?, ?, ?, ?)",
     insertLuogo : "INSERT INTO luogo (titolo, posizione, citta, nazione, id_utente, data_creazione) VALUES (?, ?, ?, ?, ?, ?)",

@@ -23,6 +23,8 @@ app.use('/luogo', luogo);
 const esperienza = require('./routes/esperienza');
 app.use('/esperienza', esperienza);
 
+const user = require('./routes/user');
+app.use('/user', user);
 
 app.use(express.static('public')) //rende accessibile la cartella public (per le immagini)
 

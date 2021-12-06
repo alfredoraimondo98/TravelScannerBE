@@ -221,6 +221,9 @@ exports.votaAccessibilita = async (req, res, next)=>{
         //recupera la gallery di ogni esperienza
         for(let i=0; i<esperienzeCount.length; i++){
             const [rows_gallery, field_gallery] = await connection.query(query.getGalleryByEsperienza, [esperienzeCount[i].id_esperienza]); //recupera le gallery delle esperienze
+            rows_gallery.forEach( r => { 
+                r.path = service.server + r.path //Creazione path per le img
+            })
             esperienzeCount[i].gallery = rows_gallery
         }
         
@@ -268,7 +271,11 @@ exports.votaAccessibilita = async (req, res, next)=>{
         //recupera la gallery di ogni esperienza
         for(let i=0; i<esperienzeCount.length; i++){
             const [rows_gallery, field_gallery] = await connection.query(query.getGalleryByEsperienza, [esperienzeCount[i].id_esperienza]); //recupera le gallery delle esperienze
+            rows_gallery.forEach( r => { 
+                r.path = service.server + r.path //Creazione path per le img
+            })
             esperienzeCount[i].gallery = rows_gallery
+            
         }
         
         res.status(201).json({

@@ -69,5 +69,6 @@ module.exports = {
 
     updateNumVotiFotoCopertina: "UPDATE esperienza SET count_foto_copertina = ? WHERE id_esperienza= ?",
     updateVotoDescrizione: "UPDATE esperienza SET count_descrizione = ? WHERE id_esperienza= ?", //aggiorna il voto della descrizione in esperienza
+    updateVotoAccessibilita: "UPDATE esperienza SET count_accessibilita = ? WHERE id_esperienza= ?",
     updateVoto: "UPDATE voto SET voto = ? WHERE id_esperienza = ? AND id_utente = ? AND tipo_voto = ?" //aggiorna il voto della descrizione in voto in caso in cui un utente volesse rivotare
 }

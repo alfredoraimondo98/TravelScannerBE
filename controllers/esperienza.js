@@ -220,7 +220,7 @@ exports.votaDescrizione = async (req, res, next)=>{
         else{
             
             await connection.query(query.updateVoto,[votoDescrizione,idEsperienza,idUtente,"descrizione"])
-            
+
             const[rows_votoTot, field_votoTot]= await connection.query(query.getTotVotieSomma,[idEsperienza,"descrizione"])
             var mediaVoti=rows_votoTot[0].sommaVoti/rows_votoTot[0].countVoti
             await connection.query(query.updateVotoDescrizione,[mediaVoti,idEsperienza])
@@ -247,7 +247,59 @@ exports.votaDescrizione = async (req, res, next)=>{
 
 
 exports.votaAccessibilita = async (req, res, next)=>{
-// stelle
+    var idEsperienza= req.body.idEsperienza
+    var idUtente= req.body.idUtente
+    var votoAccessibilita= req.body.votoAccessibilita
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    await connection.beginTransaction(async function (err) { //avvia una nuova transazione
+        if (err) { throw err; }
+    });
+
+    try{
+        const [rows_verify, field_verify]= await connection.query(query.verifyVotoTipo,[idUtente, idEsperienza,"accessibilita"])
+        if(rows_verify[0]==undefined){
+            await connection.query(query.insertVoto,[idUtente,idEsperienza,votoAccessibilita,"accessibilita"])
+
+            const[rows_votoTot, field_votoTot]= await connection.query(query.getTotVotieSomma,[idEsperienza,"accessibilita"])
+            var mediaVoti=rows_votoTot[0].sommaVoti/rows_votoTot[0].countVoti
+
+            await connection.query(query.updateVotoAccessibilita,[mediaVoti,idEsperienza])
+            
+
+            
+            await connection.commit(); //effettua il commit delle transazioni
+
+            res.status(201).json({
+                mess : 'ok'
+            })
+        }
+        else{
+            
+            await connection.query(query.updateVoto,[votoAccessibilita,idEsperienza,idUtente,"accessibilita"])
+            
+            const[rows_votoTot, field_votoTot]= await connection.query(query.getTotVotieSomma,[idEsperienza,"accessibilita"])
+            var mediaVoti=rows_votoTot[0].sommaVoti/rows_votoTot[0].countVoti
+            await connection.query(query.updateVotoAccessibilita,[mediaVoti,idEsperienza])
+
+            await connection.commit();
+            res.status(201).json({
+                mess : 'voto aggiornato'
+            })
+        }
+    }
+    catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+        await connection.rollback(); //effettua il commit delle transazioni
+    
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
 }
 
 

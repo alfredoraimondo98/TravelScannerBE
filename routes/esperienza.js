@@ -14,8 +14,8 @@ upload.array('fotoGallery',3),
 ,esperienzaController.createEsperienza)
 
 router.post('/votaEsperienzaTot',esperienzaController.votaEsperienzaTot)
-
-
+router.post('/votaFotoCopertina',esperienzaController.votaFotoCopertina)
+router.post('/votaDescrizione',esperienzaController.votaDescrizione)
 router.post('/getEsperienzeVotate', esperienzaController.getEsperienzeVotate); //Restituisce le eperienze in ordine di voto di un luogo
 
 router.post('/getEsperienzeRecenti', esperienzaController.getEsperienzeRecenti); //Restituisce le esperienze più recenti di un luogo

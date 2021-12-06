@@ -50,6 +50,7 @@ module.exports = {
                                 WHERE gallery.id_esperienza = ? `, //recupera la gallery di foto di una data esperienza
 
     getLastUsersPhoto : `SELECT id_utente, img FROM utente ORDER BY id_utente DESC`, //recupera le foto degli utenti 
+    getTotVotieSomma: ' SELECT SUM(voto) as sommaVoti, COUNT(*) as countVoti FROM voto WHERE id_esperienza = ? AND tipo_voto = ?',
 
     insertUser : "INSERT INTO utente (nome, cognome, email, password, data_di_nascita, badge, img) VALUES (?, ?, ?, ?, ?, ?, ?)",
     insertLuogo : "INSERT INTO luogo (titolo, posizione, citta, nazione, id_utente, data_creazione) VALUES (?, ?, ?, ?, ?, ?)",
@@ -60,10 +61,13 @@ module.exports = {
     insertFoto: "INSERT INTO foto(path,id_gallery) VALUES (?,?)",
     insertVoto: "INSERT INTO voto(id_utente, id_esperienza, voto, tipo_voto) VALUES (?,?,?,?)",
 
+
     verifyMail : "SELECT email FROM utente WHERE email = ?",
     verifyLuogo : "SELECT titolo FROM luogo WHERE titolo = ?",
     verifyVoto : "SELECT voto FROM voto WHERE id_utente = ? AND id_esperienza = ?",
-    verifyVotoFotoCopertina : "SELECT voto FROM voto WHERE id_utente = ? AND id_esperienza = ? AND tipo_voto = ?",
+    verifyVotoTipo : "SELECT voto FROM voto WHERE id_utente = ? AND id_esperienza = ? AND tipo_voto = ?",
 
-    updateNumVotiFotoCopertina: "UPDATE esperienza SET count_foto_copertina = ? WHERE id_esperienza= ?"
+    updateNumVotiFotoCopertina: "UPDATE esperienza SET count_foto_copertina = ? WHERE id_esperienza= ?",
+    updateVotoDescrizione: "UPDATE esperienza SET count_descrizione = ? WHERE id_esperienza= ?", //aggiorna il voto della descrizione in esperienza
+    updateVoto: "UPDATE voto SET voto = ? WHERE id_esperienza = ? AND id_utente = ? AND tipo_voto = ?" //aggiorna il voto della descrizione in voto in caso in cui un utente volesse rivotare
 }

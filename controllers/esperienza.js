@@ -96,7 +96,6 @@ exports.createEsperienza = async (req, res, next)=>{
 exports.votaEsperienzaTot = async (req, res, next)=>{
 var idEsperienza= req.body.idEsperienza
 var idUtente= req.body.idUtente
-console.log(idUtente)
 
 const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
 
@@ -154,8 +153,7 @@ exports.votaFotoCopertina = async (req, res, next)=>{
     
     
     try{
-        const [rows_verify, field_verify]= await connection.query(query.verifyVotoFotoCopertina,[idUtente, idEsperienza,"fotoCopertina"])
-        console.log(rows_verify[0])
+        const [rows_verify, field_verify]= await connection.query(query.verifyVotoTipo,[idUtente, idEsperienza,"fotoCopertina"])
         if (rows_verify[0]==undefined){
 
         const [rows_voto, field_voto] = await connection.query(query.insertVoto, [idUtente,idEsperienza,1,"fotoCopertina"]);
@@ -191,8 +189,62 @@ exports.votaFotoCopertina = async (req, res, next)=>{
 }
 
 exports.votaDescrizione = async (req, res, next)=>{
-// stelle
+    var idEsperienza= req.body.idEsperienza
+    var idUtente= req.body.idUtente
+    var votoDescrizione= req.body.votoDescrizione
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    await connection.beginTransaction(async function (err) { //avvia una nuova transazione
+        if (err) { throw err; }
+    });
+
+    try{
+        const [rows_verify, field_verify]= await connection.query(query.verifyVotoTipo,[idUtente, idEsperienza,"descrizione"])
+        if(rows_verify[0]==undefined){
+            await connection.query(query.insertVoto,[idUtente,idEsperienza,votoDescrizione,"descrizione"])
+
+            const[rows_votoTot, field_votoTot]= await connection.query(query.getTotVotieSomma,[idEsperienza,"descrizione"])
+            var mediaVoti=rows_votoTot[0].sommaVoti/rows_votoTot[0].countVoti
+
+            await connection.query(query.updateVotoDescrizione,[mediaVoti,idEsperienza])
+            
+
+            
+            await connection.commit(); //effettua il commit delle transazioni
+
+            res.status(201).json({
+                mess : 'ok'
+            })
+        }
+        else{
+            
+            await connection.query(query.updateVoto,[votoDescrizione,idEsperienza,idUtente,"descrizione"])
+            
+            const[rows_votoTot, field_votoTot]= await connection.query(query.getTotVotieSomma,[idEsperienza,"descrizione"])
+            var mediaVoti=rows_votoTot[0].sommaVoti/rows_votoTot[0].countVoti
+            await connection.query(query.updateVotoDescrizione,[mediaVoti,idEsperienza])
+
+            await connection.commit();
+            res.status(201).json({
+                mess : 'voto aggiornato'
+            })
+        }
+    }
+    catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+        await connection.rollback(); //effettua il commit delle transazioni
+    
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
 }
+
+
 
 exports.votaAccessibilita = async (req, res, next)=>{
 // stelle

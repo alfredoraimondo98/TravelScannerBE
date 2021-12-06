@@ -197,3 +197,94 @@ exports.votaDescrizione = async (req, res, next)=>{
 exports.votaAccessibilita = async (req, res, next)=>{
 // stelle
 }
+
+
+/**
+ * restituisce le esperienze di un luogo in ordine di voto complessivo
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ */
+ exports.getEsperienzeVotate = async(req, res, next) => {
+
+    var idLuogo = req.body.id_luogo;
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    esperienzeDelLuogo = []; 
+
+    try {
+    
+        const [rows_countEsperienze, field_countEsperienze] = await connection.query(query.getEsperienzeCountByLuogo, [idLuogo]);
+        var esperienzeCount = rows_countEsperienze; // recupera tutte le esperienze del luogo con i count relativi alla votazione di tipo "esperienza"
+
+        //recupera la gallery di ogni esperienza
+        for(let i=0; i<esperienzeCount.length; i++){
+            const [rows_gallery, field_gallery] = await connection.query(query.getGalleryByEsperienza, [esperienzeCount[i].id_esperienza]); //recupera le gallery delle esperienze
+            esperienzeCount[i].gallery = rows_gallery
+        }
+        
+        res.status(201).json({
+            esperienze : esperienzeCount
+        })
+            
+    }
+    catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
+
+}
+
+
+
+
+
+/**
+ * restituisce le esperienze di un luogo in ordine di data di creazione (dalle più recenti alle meno recenti)
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ */
+ exports.getEsperienzeRecenti = async(req, res, next) => {
+
+    var idLuogo = req.body.id_luogo;
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    esperienzeDelLuogo = []; 
+
+    try {
+    
+        const [rows_countEsperienze, field_countEsperienze] = await connection.query(query.getEsperienzeDataCreazioneByLuogo, [idLuogo]);
+        var esperienzeCount = rows_countEsperienze; // recupera tutte le esperienze del luogo con i count relativi alla votazione di tipo "esperienza" in ordine di data creazione
+
+        //recupera la gallery di ogni esperienza
+        for(let i=0; i<esperienzeCount.length; i++){
+            const [rows_gallery, field_gallery] = await connection.query(query.getGalleryByEsperienza, [esperienzeCount[i].id_esperienza]); //recupera le gallery delle esperienze
+            esperienzeCount[i].gallery = rows_gallery
+        }
+        
+        res.status(201).json({
+            esperienze : esperienzeCount
+        })
+            
+    }
+    catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
+
+}

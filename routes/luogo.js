@@ -17,6 +17,8 @@ router.post('/createLuogo',
 
 router.get('/getAllLuoghi', luogoController.getAllLuoghi); //Recupera tutti i luoghi per la visualizzazione nella card;
 
+router.get('/getRandomPlace', luogoController.getRandomPlace);; //Restituisce una lista di luoghi random da quelli presenti 
+
 router.post('/getLuogo', luogoController.getLuogo); //recupera le info per il luogo con un determinato id
 
 module.exports = router;

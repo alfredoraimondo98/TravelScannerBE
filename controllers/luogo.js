@@ -44,6 +44,8 @@ exports.createLuogo = async (req, res, next) =>{
     var fotoCopertina = req.file.path.slice(6)  //recupera path relativo dell'img (in req.file) 
     var countFotoCopertina = 0;
 
+    console.log("*** img", req.file)
+
     // ** DATI OPZIONALI *** //
     // **Orario apertura-chiusura
     var orarioApertura = req.body.orario_apertura;
@@ -186,6 +188,70 @@ exports.getAllLuoghi = async (req, res, next) =>{
 
 
 
+
+
+/**
+ * restituisce una lista di luoghi random da visualizzare (foto_copertina, titolo, città, nazione)
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * @returns 
+ */
+ exports.getRandomPlace = async (req, res, next) =>{
+    
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    await connection.beginTransaction(async function (err) { //avvia una nuova transazione
+        if (err) { throw err; }
+    });
+
+
+    var allLuoghi;
+    var randomPlaces = [];
+
+    try {
+    
+        const [rows_allLuoghi, field_allLuoghi] = await connection.query(query.getAllLuoghi); //recupera tutti i luoghi
+        allLuoghi = rows_allLuoghi;
+
+        await allLuoghi.forEach( async (luogo) => {
+            const [rows_luogo, field_luogo] = await connection.query(query.getLuogoCard, [luogo.id_luogo]); //recupera tutti i luoghi memorizzati
+
+            var place = {
+                id_luogo : luogo.id_luogo,
+                titolo : luogo.titolo,
+                citta : luogo.citta,
+                nazione : luogo.nazione,
+                data_creazione : luogo.data_creazione,
+                foto_copertina : service.server+luogo.fotoCopertina,
+                count_foto_copertina : luogo.count_foto_copertina,
+                data_creazione_esperienza : luogo.data_creazione_esperienza
+            }
+    
+
+            randomPlaces.push(place); //recupera il luogo con foto_copertina più votata e più recente
+        })
+    
+
+        await connection.commit(); //effettua il commit delle transazioni
+
+ 
+        res.send(randomPlaces);
+            
+    }
+    catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+        await connection.rollback(); //effettua il commit delle transazioni
+
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
+}
+
 /**
  * Restituisce un luogo dato il suo id con le informazioni (descrizione, fotocopertina, accessibilita, gallery) più votate
  * @param {*} req 
@@ -228,7 +294,7 @@ exports.getLuogo = async (req, res, next) => {
             posizione : luogo.posizione,
             citta : luogo.citta,
             nazione : luogo.nazione,
-            foto_copertina : fotoCopertina.foto_copertina,
+            foto_copertina : service.server+fotoCopertina.foto_copertina,
             descrizione : descrizione.descrizione,
             accessibilita : accessibilita.accessibilita,
             orari_di_apertura : orari, //se presenti

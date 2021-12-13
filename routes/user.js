@@ -5,7 +5,7 @@ const upload = require('../middleware/uploadImg'); //uploadImg middleware per l'
 const userController = require("../controllers/user");
 
 
-router.get('/getLastUsersPhoto', userController.getLastUserPhoto); //restituisce le foto degli ultimi utenti registrati
+router.get('/getRecentlyUsersPhoto', userController.getRecentlyUsersPhoto); //restituisce le foto degli ultimi utenti registrati
 
 
 module.exports = router;

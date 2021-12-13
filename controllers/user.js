@@ -12,7 +12,7 @@ const service = require('../utils/service');
  * @param {*} res 
  * @param {*} next 
  */
-exports.getLastUserPhoto = async (req, res, next) => {
+exports.getRecentlyUsersPhoto = async (req, res, next) => {
     
     const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
 
@@ -22,10 +22,15 @@ exports.getLastUserPhoto = async (req, res, next) => {
         const [rows_user, field_user] = await connection.query(query.getLastUsersPhoto);
         var user = rows_user; // recupera tutte le esperienze del luogo con i count relativi alla votazione di tipo "esperienza"
 
-         
-        res.status(201).json({
-            foto : user
+        user.forEach( us => {
+            us.img = service.server + us.img
+            //console.log("** user", user);
         })
+
+        res.send(user);
+        /*res.status(201).json({
+            foto : user
+        })*/
             
     }
     catch(err){ //se si verifica un errore 

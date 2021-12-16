@@ -158,10 +158,10 @@ exports.getAllLuoghi = async (req, res, next) =>{
     
         const [rows_allLuoghi, field_allLuoghi] = await connection.query(query.getAllLuoghi); //recupera tutti i luoghi
         allLuoghi = rows_allLuoghi;
-
+         
         await allLuoghi.forEach( async (luogo) => {
-            const [rows_luogo, field_luogo] = await connection.query(query.getLuogoCard, [luogo.id_luogo]); //recupera tutti i luoghi memorizzati
-            luoghiCard.push(rows_luogo[0]); //recupera il luogo con foto_copertina più votata e più recente
+            const [rows_luogo, field_luogo] = await connection.query(query.getLuogoCard, [luogo.id_luogo]); //recupera tutte le possibili esperienze (card) del luogo
+            luoghiCard.push(rows_luogo[0]); //memorizza il luogo con foto_copertina più votata e più recente
         })
         
         await connection.commit(); //effettua il commit delle transazioni
@@ -197,7 +197,7 @@ exports.getAllLuoghi = async (req, res, next) =>{
  * @param {*} next 
  * @returns 
  */
- exports.getRandomPlace = async (req, res, next) =>{
+ exports.getRandomPlaces = async (req, res, next) =>{
     
     const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
 
@@ -205,8 +205,9 @@ exports.getAllLuoghi = async (req, res, next) =>{
         if (err) { throw err; }
     });
 
-
+    var promisesArray = [];
     var allLuoghi;
+    var luoghiCard = [];
     var randomPlaces = [];
 
     try {
@@ -214,29 +215,56 @@ exports.getAllLuoghi = async (req, res, next) =>{
         const [rows_allLuoghi, field_allLuoghi] = await connection.query(query.getAllLuoghi); //recupera tutti i luoghi
         allLuoghi = rows_allLuoghi;
 
-        await allLuoghi.forEach( async (luogo) => {
-            const [rows_luogo, field_luogo] = await connection.query(query.getLuogoCard, [luogo.id_luogo]); //recupera tutti i luoghi memorizzati
+        try{ 
 
-            var place = {
-                id_luogo : luogo.id_luogo,
-                titolo : luogo.titolo,
-                citta : luogo.citta,
-                nazione : luogo.nazione,
-                data_creazione : luogo.data_creazione,
-                foto_copertina : service.server+luogo.fotoCopertina,
-                count_foto_copertina : luogo.count_foto_copertina,
-                data_creazione_esperienza : luogo.data_creazione_esperienza
+            allLuoghi.forEach( async (luogo) => {
+
+                    new Promise(async (resolve, reject) => {
+
+                        var res = connection.query(query.getLuogoCard, [luogo.id_luogo]); //recupera tutti i luoghi memorizzati (in pending)
+                        
+                        resolve(res); //memorizza il risultato nella resolve
+
+                        promisesArray.push(res) //inserisce la promise nell'array
+                    })
+            })
+        }
+        catch(err){
+            console.log("err " , err);
+            await connection.rollback(); //effettua il commit delle transazioni
+    
+            res.status(401).json({
+                mess : err
+            })
+        }
+         
+        //risolve le promise
+        Promise.all(promisesArray).then( (results) => {
+
+            for( let i = 0 ; i < promisesArray.length; i++){ 
+                luoghiCard.push(results[i][0][0]); //recupera il risultato (il primo risultato) di ogni query
             }
-    
+                
+ 
+            if(luoghiCard.length > 5){
 
-            randomPlaces.push(place); //recupera il luogo con foto_copertina più votata e più recente
-        })
+                for(let i=0; i<5; i++){ //Visualizza solo 5 luoghi nella homepage
     
+                    var index = Math.floor(Math.random() * luoghiCard.length); //Seleziona un elemento random
+                    randomPlaces.push(luoghiCard[index]); //memorizza l'elemento in randomPlaces
+                    luoghiCard.splice(index, 1); //rimuove l'elemento dalla lista di tutti i luoghi   
+                    console.log("*** ", randomPlaces)
+                }   
+            }
+
+        })
+            
+           
 
         await connection.commit(); //effettua il commit delle transazioni
 
  
-        res.send(randomPlaces);
+        res.status(201).send(randomPlaces);
             
     }
     catch(err){ //se si verifica un errore 

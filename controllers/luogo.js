@@ -253,8 +253,10 @@ exports.getAllLuoghi = async (req, res, next) =>{
                     var index = Math.floor(Math.random() * luoghiCard.length); //Seleziona un elemento random
                     randomPlaces.push(luoghiCard[index]); //memorizza l'elemento in randomPlaces
                     luoghiCard.splice(index, 1); //rimuove l'elemento dalla lista di tutti i luoghi   
-                    console.log("*** ", randomPlaces)
-                }   
+                 }   
+            }
+            else{
+                randomPlaces = luoghiCard;
             }
 
         })

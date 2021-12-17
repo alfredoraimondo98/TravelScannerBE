@@ -157,3 +157,22 @@ exports.login = async (req, res, next) => {
         return true; //mail già presente: non può procedere alla registrazione
     }
 }
+
+
+
+/**
+ * Procedura di verifica email in fase di registrazione
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ */
+ exports.verifyEmail = async (req, res, next) => {
+    var email = req.body.email;
+
+    if(await verifyMail(email)){ //se la mail è già presente viene restituito TRUE e non si può procedere alla registrazione
+        res.status(201).send(true); //MAIL PRESENTE = TRUE (NON si può procedere alla registrazione)
+    }
+    else{
+        res.status(201).send(false); //MAIL NON PRESENTE = FALSE (Si può procedere alla registrazione)
+    }
+}

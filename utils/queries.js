@@ -1,6 +1,7 @@
 module.exports = { 
 
     getUserByEmail: "SELECT * FROM utente WHERE email = ?",
+    getUserById : "SELECT * FROM utente WHERE id_utente = ?",
     getAllLuoghi : "SELECT * FROM luogo",
     getLuogoById : "SELECT * FROM luogo WHERE id_luogo = ?", 
     getDescrizioneByLuogo : "SELECT id_esperienza, descrizione, count_descrizione, data_creazione FROM esperienza WHERE id_luogo = ? ORDER BY data_creazione DESC, count_descrizione DESC", //Restituisce la descrizione con voto (count) più alto per il luogo
@@ -8,7 +9,13 @@ module.exports = {
     getAccessibilitaByLuogo : "SELECT id_esperienza, accessibilita, count_accessibilita, data_creazione FROM esperienza WHERE id_luogo = ? ORDER BY data_creazione DESC, count_accessibilita DESC", // Restituisce l'accessibilita con voto (count) più alto per il luogo
     getOrariByLuogo : "SELECT orario_apertura, orario_chiusura FROM orari_di_apertura WHERE id_luogo = ?",
     getCostoByLuogo : "SELECT costo_minimo, costo_massimo FROM costo WHERE id_luogo = ?",
+   
+    getMyExperience : "SELECT * FROM esperienza WHERE id_utente = ?",
 
+    getMyGalleryByExperience : `SELECT foto.path, gallery.count FROM gallery JOIN foto
+                                ON gallery.id_gallery = foto.id_gallery
+                                WHERE gallery.id_esperienza = ?`,
+                
    /* getLuogoCard : `SELECT luogo.id_luogo, luogo.titolo, luogo.citta, luogo.nazione, luogo.data_creazione, esperienza.foto_copertina, esperienza.count_foto_copertina, esperienza.data_creazione as data_creazione_esperienza
                     FROM luogo JOIN esperienza JOIN orari_di_apertura JOIN costo
                     ON luogo.id_luogo = esperienza.id_luogo 

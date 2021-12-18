@@ -12,7 +12,7 @@ const mysql = require('mysql2');
 */ 
 
 /* HEROKU CONNECTION CLEARDB */
-/*
+
 const pool = mysql.createPool({
     host: 'eu-cdbr-west-01.cleardb.com',
     database: 'heroku_a860383571f3622',
@@ -20,10 +20,10 @@ const pool = mysql.createPool({
     password: '17e674c4',
     //debug :true
 });
-*/
+
 
 /* AZURE CONNECTION DB */
-
+/*
 const pool = mysql.createPool({
     host: 'travelscanner-dbserver.mysql.database.azure.com',
     database: 'heroku_a860383571f3622',
@@ -31,7 +31,7 @@ const pool = mysql.createPool({
     password: 'ts-emad2021',
     //debug :true
 });
-
+*/
 
 module.exports = pool.promise();
 

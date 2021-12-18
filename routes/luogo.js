@@ -6,16 +6,16 @@ const luogoController = require("../controllers/luogo");
 
 
 
-router.post('/createLuogo', 
-    upload.single('foto_copertina'), //caricamento foto copertina luogo
+router.post('/createPlace', 
+    upload.array('images', 5 ), //caricamento foto copertina luogo (.[0] -> foto copertina ; .[1] - [4] foto gallery)
     [
         //controllo valori input
     ],
-    luogoController.createLuogo);
+    luogoController.createPlace);
 
 
 
-router.get('/getAllLuoghi', luogoController.getAllLuoghi); //Recupera tutti i luoghi per la visualizzazione nella card;
+router.get('/getAllPlaces', luogoController.getAllPlaces); //Recupera tutti i luoghi per la visualizzazione nella card;
 
 router.get('/getRandomPlaces', luogoController.getRandomPlaces);; //Restituisce una lista di luoghi random da quelli presenti 
 

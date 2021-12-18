@@ -12,7 +12,7 @@ const service = require('../utils/service');
  * @param {*} res 
  * @param {*} next 
  */
-exports.createLuogo = async (req, res, next) =>{
+exports.createPlace = async (req, res, next) =>{
 
     const errors = validationResult(req);
 
@@ -41,10 +41,19 @@ exports.createLuogo = async (req, res, next) =>{
     var countDescrizione = 0;
     var accessibilita = req.body.descrizione;
     var countAccessibilita = 0;
-    var fotoCopertina = req.file.path.slice(6)  //recupera path relativo dell'img (in req.file) 
+    var fotoCopertina;
+    var arrayGallery = [];
+
+    if(req.files[0]){
+        fotoCopertina = req.files[0].path.slice(6)  //recupera path relativo dell'img (in req.file) 
+    }
+    else{
+        fotoCopertina = '';
+    }
+
     var countFotoCopertina = 0;
 
-    console.log("*** img", req.file)
+    console.log("*** img", req.files)
 
     // ** DATI OPZIONALI *** //
     // **Orario apertura-chiusura
@@ -74,8 +83,11 @@ exports.createLuogo = async (req, res, next) =>{
             var idLuogo = rows_luogo.insertId; //recuper l'id associato al luogo appena inserito
 
 
-            const [rows_esperienza, field_esperienza] = await connection.query(query.insertEsperienza, [descrizione, countDescrizione, fotoCopertina, countFotoCopertina, accessibilita, countAccessibilita, idUtente, dataCreazione, idLuogo ]); //Creazione luogo
+            const [rows_esperienza, field_esperienza] = await connection.query(query.insertEsperienza, [descrizione, countDescrizione, fotoCopertina, countFotoCopertina, accessibilita, countAccessibilita, idLuogo ]); //Creazione luogo
             var idEsperienza = rows_esperienza.insertId; //recuper l'id associato all'esperienza appena creata
+
+
+            const [rows_createExp, field_createExp] = await connection.query(query.insertUserCreateExperience, [idUtente, idEsperienza, dataCreazione]); //memorizza in "creare_esperienza" l'associazione utente-esperienza
 
 
             // *** INSERT DATI OPZIONALI (verifica se i dati opzionali sono presenti vengono registrati nel db)
@@ -87,6 +99,23 @@ exports.createLuogo = async (req, res, next) =>{
             if(costoMin != '' && costoMin != undefined && costoMax != '' && costoMax != undefined){
                 const [rows_costo, field_costo] = await connection.query(query.insertCosto, [idLuogo, costoMin, costoMax]); //Creazione costo max - min
             }
+
+
+            // *** GALLERY : Se presente memorizzare le foto e creare una gallery da associare all'esperienza appena creata
+
+
+            const [rows_gallery, field_gallery] = await connection.query(query.createGallery, [0, idEsperienza]); //crea la gallery per l'esperienza
+            var idGallery = rows_gallery.insertId; //recuper l'id associato alla gallery appena creata
+
+            //verifica se sono presenti foto per la gallery
+            if(req.files.length > 1){ //sono presenti le foto per la gallery
+                for(let i = 1; i < req.files.length; i++){
+                    arrayGallery.push(req.files[i].path.slice(6)); //recupera i path delle foto gallery
+
+                    const [rows_foto, field_foto] = await connection.query(query.insertFoto, [req.files[i].path.slice(6), idGallery]); //memorizza le foto della gallery
+                }
+            }
+
 
 
             await connection.commit(); //effettua il commit delle transazioni
@@ -142,7 +171,7 @@ async function verifyLuogo(titolo){
  * @param {*} next 
  * @returns 
  */
-exports.getAllLuoghi = async (req, res, next) =>{
+exports.getAllPlaces = async (req, res, next) =>{
     
     const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
 
@@ -259,9 +288,28 @@ exports.getAllLuoghi = async (req, res, next) =>{
                 randomPlaces = luoghiCard;
             }
 
+
+
+        // MOCK RESPONSE ********************************************//
+
+            randomPlaces.forEach( el => {
+                el['descrizione'] = `Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum`;
+                el['accessibilita'] = `There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable.`;
+                el['orario_apertura'] = '10:00';
+                el['orario_chiusura'] = '12:00';
+                el['costo_minimo'] = '50';
+                el['costo_massimo'] = '150';
+                el.foto_copertina = 'https://travelscanner-be.azurewebsites.net\images\1639823030153-vittorio-emanuele-monument-rome-rome-palace-altare-della-patria-56886.jpeg';
+                el['voto_luogo'] = 3.5;
+                el['numero_votazioni'] = 120; 
+                // el.foto_copertina = service.server + el.foto_copertina;
+            })
+    
+    
+
         })
             
-           
+
 
         await connection.commit(); //effettua il commit delle transazioni
 

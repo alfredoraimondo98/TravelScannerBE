@@ -3,10 +3,70 @@ module.exports = {
     getUserByEmail: "SELECT * FROM utente WHERE email = ?",
     getUserById : "SELECT * FROM utente WHERE id_utente = ?",
     getAllLuoghi : "SELECT * FROM luogo",
+
+    getAllPlacesWithOptionalField : `SELECT luogo.id_luogo, luogo.titolo, luogo.citta, luogo.nazione, luogo.posizione, esperienza.foto_copertina, esperienza.count_foto_copertina, 
+                                            orari_di_apertura.orario_apertura, orari_di_apertura.orario_chiusura, costo.costo_minimo, costo.costo_massimo
+                                    FROM luogo JOIN costo JOIN orari_di_apertura JOIN esperienza
+                                        ON luogo.id_luogo = costo.id_luogo AND luogo.id_luogo = orari_di_apertura.id_luogo AND luogo.id_luogo = esperienza.id_luogo
+                                        ORDER BY esperienza.count_foto_copertina DESC, esperienza.data_creazione DESC
+                                    `,
+
     getLuogoById : "SELECT * FROM luogo WHERE id_luogo = ?", 
-    getDescrizioneByLuogo : "SELECT id_esperienza, descrizione, count_descrizione, data_creazione FROM esperienza WHERE id_luogo = ? ORDER BY data_creazione DESC, count_descrizione DESC", //Restituisce la descrizione con voto (count) più alto per il luogo
-    getFotoCopertinaByLuogo : "SELECT id_esperienza, foto_copertina, count_foto_copertina, data_creazione FROM esperienza WHERE id_luogo = ? ORDER BY data_creazione DESC, foto_copertina DESC", //Restituisce la foto copertina con voto (count) più alto per il luogo
-    getAccessibilitaByLuogo : "SELECT id_esperienza, accessibilita, count_accessibilita, data_creazione FROM esperienza WHERE id_luogo = ? ORDER BY data_creazione DESC, count_accessibilita DESC", // Restituisce l'accessibilita con voto (count) più alto per il luogo
+    
+
+    getTopGalleryByLuogo : `SELECT * FROM foto JOIN gallery
+                            ON foto.id_gallery = gallery.id_gallery
+                            WHERE foto.id_gallery = ( 
+                                        SELECT id_gallery FROM gallery JOIN esperienza
+                                        ON gallery.id_esperienza = esperienza.id_esperienza
+                                        WHERE esperienza.id_luogo = ?
+                                        ORDER BY gallery.count_gallery DESC LIMIT 1 
+                            )
+                            `,
+
+    getTopDescrizioneByLuogoWithUser : `SELECT esperienza.id_esperienza, descrizione, count_descrizione, esperienza.id_utente, 
+                                                        utente.nome, utente.cognome, utente.img, creare_esperienza.data_creazione 
+                                                    FROM esperienza JOIN creare_esperienza JOIN utente
+                                                    ON esperienza.id_utente = creare_esperienza.id_utente
+                                                        AND creare_esperienza.id_utente = utente.id_utente
+                                                    WHERE id_luogo = ? 
+                                                    ORDER BY count_descrizione DESC, creare_esperienza.data_creazione DESC LIMIT 1
+                                                `,
+
+    getTopFotoCopertinaByLuogoWithUser :`SELECT esperienza.id_esperienza, foto_copertina, count_foto_copertina, esperienza.id_utente, 
+                                            utente.nome, utente.cognome, utente.img, creare_esperienza.data_creazione 
+                                        FROM esperienza JOIN creare_esperienza JOIN utente
+                                        ON esperienza.id_utente = creare_esperienza.id_utente
+                                            AND creare_esperienza.id_utente = utente.id_utente
+                                        WHERE id_luogo = ? 
+                                        ORDER BY count_descrizione DESC, creare_esperienza.data_creazione DESC LIMIT 1
+                                        `, 
+                                        
+    getTopAccessibilitaByLuogoWithUser : `SELECT esperienza.id_esperienza, accessibilita, count_accessibilita, esperienza.id_utente, 
+                                            utente.nome, utente.cognome, utente.img, creare_esperienza.data_creazione 
+                                        FROM esperienza JOIN creare_esperienza JOIN utente
+                                        ON esperienza.id_utente = creare_esperienza.id_utente
+                                            AND creare_esperienza.id_utente = utente.id_utente
+                                        WHERE id_luogo = ? 
+                                        ORDER BY count_accessibilita DESC, creare_esperienza.data_creazione DESC LIMIT 1
+                                        `, 
+
+    getTopGalleryByLuogoWithUser : `SELECT foto.id_foto, foto.path, gallery.id_gallery, gallery.count_gallery, esperienza.id_esperienza,
+                                            creare_esperienza.data_creazione, utente.id_utente, utente.nome, utente.cognome, utente.img
+
+                                    FROM foto JOIN gallery JOIN esperienza JOIN creare_esperienza JOIN utente
+                                        ON foto.id_gallery = gallery.id_gallery 
+                                        AND gallery.id_esperienza = esperienza.id_esperienza
+                                        AND esperienza.id_utente = creare_esperienza.id_utente
+                                        AND creare_esperienza.id_utente = utente.id_utente
+                                                            WHERE foto.id_gallery = ( 
+                                                                        SELECT id_gallery FROM gallery JOIN esperienza
+                                                                        ON gallery.id_esperienza = esperienza.id_esperienza
+                                                                        WHERE esperienza.id_luogo = ?
+                                                                        ORDER BY gallery.count_gallery DESC LIMIT 1 
+                                                            )
+                                        GROUP BY id_foto`,
+
     getOrariByLuogo : "SELECT orario_apertura, orario_chiusura FROM orari_di_apertura WHERE id_luogo = ?",
     getCostoByLuogo : "SELECT costo_minimo, costo_massimo FROM costo WHERE id_luogo = ?",
    
@@ -23,14 +83,22 @@ module.exports = {
                     ORDER BY count_foto_copertina DESC, data_creazione_esperienza DESC`, //Restituisce i dati per una card di un luogo con la foto_copertina più votata in prima posizione nel risultato
      */   
 
-     getLuogoCard : `SELECT luogo.id_luogo, luogo.titolo, luogo.posizione, luogo.citta, luogo.nazione, luogo.data_creazione, 
-                        esperienza.foto_copertina, esperienza.count_foto_copertina, esperienza.data_creazione as data_creazione_esperienza 
+
+  //  getTopCoverPhotoByLuogo : 'SELECT foto_copertina, count_foto_copertina FROM esperienza WHERE id_luogo = ? ORDER BY count_foto_copertina DESC, data_creazione DESC LIMIT 1',
+   // getTopDescriptionByLuogo : 'SELECT descrizione, count_descrizione FROM esperienza WHERE id_luogo = ? ORDER BY count_descrizione DESC, data_creazione DESC LIMIT 1',
+    //getTopAccessibilityByLuogo : 'SELECT accessibilita, count_accessibilita FROM esperienza WHERE id_luogo = ? ORDER BY count_accessibilita DESC, data_creazione DESC LIMIT 1',
+   // getTopGalleryByLuogo : 'SELECT id_gallery, count FROM gallery WHERE id_esperienza = ? ORDER BY count_accessibilita DESC, data_creazione DESC LIMIT 1',
+  //  getExperiencesByLuogo: `SELECT id_esperienza FROM esperienza WHERE id_luogo = ?`,
+
+     getLuogoCard : `SELECT luogo.id_luogo, luogo.titolo, luogo.posizione, luogo.citta, luogo.nazione, 
+                        esperienza.foto_copertina, esperienza.count_foto_copertina, 
                     FROM luogo  LEFT JOIN esperienza 
                     ON luogo.id_luogo = esperienza.id_luogo 
                     WHERE luogo.id_luogo = ?
                     ORDER BY esperienza.count_foto_copertina DESC, data_creazione_esperienza DESC`, 
 
- 
+    
+            
 
     getNumVotiFotoCopertina: 'SELECT count_foto_copertina from esperienza WHERE id_esperienza = ?',
 
@@ -69,6 +137,23 @@ module.exports = {
 
     getLastUsersPhoto : `SELECT id_utente, img FROM utente ORDER BY id_utente DESC`, //recupera le foto degli utenti 
     getTotVotieSomma: ' SELECT SUM(voto) as sommaVoti, COUNT(*) as countVoti FROM voto WHERE id_esperienza = ? AND tipo_voto = ?',
+
+
+    getTotalDescrizione : `SELECT COUNT(*) as count_total FROM voto
+                            WHERE tipo_voto='descrizione' AND voto.id_esperienza = ( 
+                                                    SELECT esperienza.id_esperienza FROM esperienza JOIN creare_esperienza 
+                                                    ON esperienza.id_esperienza = creare_esperienza.id_esperienza
+                                                    WHERE id_luogo = ? 
+                                                    ORDER BY count_descrizione DESC, creare_esperienza.data_creazione DESC LIMIT 1
+                            )` ,    //recupera totale voti descrizione per la miglior desrizione di un luogo
+                            
+    getTotalAccessibilita : `SELECT COUNT(*) as count_total FROM voto
+                             WHERE tipo_voto='accessibilita' AND voto.id_esperienza = ( 
+                                                    SELECT esperienza.id_esperienza FROM esperienza JOIN creare_esperienza 
+                                                    ON esperienza.id_esperienza = creare_esperienza.id_esperienza
+                                                    WHERE id_luogo = ? 
+                                                    ORDER BY count_accessibilita DESC, creare_esperienza.data_creazione DESC LIMIT 1
+                            )`, //recupera totale voti accessibilità per la miglior accessibilità di un luogo
 
     insertUser : "INSERT INTO utente (nome, cognome, email, password, data_di_nascita, badge, img) VALUES (?, ?, ?, ?, ?, ?, ?)",
     insertLuogo : "INSERT INTO luogo (titolo, posizione, citta, nazione, id_utente, data_creazione) VALUES (?, ?, ?, ?, ?, ?)",

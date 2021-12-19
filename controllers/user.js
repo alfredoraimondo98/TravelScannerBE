@@ -25,17 +25,25 @@ exports.getRecentlyUsersPhoto = async (req, res, next) => {
     try {
     
         const [rows_user, field_user] = await connection.query(query.getLastUsersPhoto);
-        var user = rows_user; // recupera tutte le esperienze del luogo con i count relativi alla votazione di tipo "esperienza"
+        var users = rows_user; // recupera tutte le esperienze del luogo con i count relativi alla votazione di tipo "esperienza"
 
-        user.forEach( us => {
+        users.forEach( us => {
             us.img = service.server + us.img
             //console.log("** user", user);
         })
 
 
-        var userLimited = rows_user[0];
+        
+        var userLimited = []; //array degli ultimi 10 utenti
+        if(users.length < 10){
+            userLimited = users;
+        }
+        for(let i = 0; i < 10; i++){
+            userLimited.push(users[i]);
+        } 
 
         res.send(userLimited);
+
         /*res.status(201).json({
             foto : user
         })*/

@@ -162,63 +162,6 @@ async function verifyLuogo(titolo){
 
 
 
-
-
-/**
- * restituisce tutti i luoghi per la visualizzazione della card (foto_copertina, titolo, città, nazione)
- * @param {*} req 
- * @param {*} res 
- * @param {*} next 
- * @returns 
- */
-exports.getAllPlaces = async (req, res, next) =>{
-    
-    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
-
-    await connection.beginTransaction(async function (err) { //avvia una nuova transazione
-        if (err) { throw err; }
-    });
-
-
-    var allLuoghi;
-    var luoghiCard = [];
-
-    try {
-    
-        const [rows_allLuoghi, field_allLuoghi] = await connection.query(query.getAllLuoghi); //recupera tutti i luoghi
-        allLuoghi = rows_allLuoghi;
-         
-        await allLuoghi.forEach( async (luogo) => {
-            const [rows_luogo, field_luogo] = await connection.query(query.getLuogoCard, [luogo.id_luogo]); //recupera tutte le possibili esperienze (card) del luogo
-            luoghiCard.push(rows_luogo[0]); //memorizza il luogo con foto_copertina più votata e più recente
-        })
-        
-        await connection.commit(); //effettua il commit delle transazioni
-
-        //console.log("*** ", luoghiCard)
-
-        res.status(201).json({
-            luoghi : luoghiCard
-        })
-            
-    }
-    catch(err){ //se si verifica un errore 
-        console.log("err " , err);
-        await connection.rollback(); //effettua il commit delle transazioni
-
-        res.status(401).json({
-            mess : err
-        })
-    }
-    finally{
-        await connection.release(); //rilascia la connessione al termine delle operazioni 
-    }
-}
-
-
-
-
-
 /**
  * restituisce una lista di luoghi random da visualizzare (foto_copertina, titolo, città, nazione)
  * @param {*} req 
@@ -234,65 +177,66 @@ exports.getAllPlaces = async (req, res, next) =>{
         if (err) { throw err; }
     });
 
-    var promisesArray = [];
-    var allLuoghi;
+    var allPlaces;
     var luoghiCard = [];
     var randomPlaces = [];
 
     try {
+        
+        const [rows_all, field_all] = await connection.query(query.getAllPlacesWithOptionalField); //recupera tutti i luoghi
+        allPlaces = rows_all;
+
+
+        //seleziona 5 random places da mostrare sulla home
+        if(allPlaces.length > 5){
+            for(let i=0; i<5; i++){ //Visualizza solo 5 luoghi nella homepage
     
-        const [rows_allLuoghi, field_allLuoghi] = await connection.query(query.getAllLuoghi); //recupera tutti i luoghi
-        allLuoghi = rows_allLuoghi;
+                var index = Math.floor(Math.random() * allPlaces.length); //Seleziona un elemento random
+                randomPlaces.push(allPlaces[index]); //memorizza l'elemento in randomPlaces
+                allPlaces.splice(index, 1); //rimuove l'elemento dalla lista di tutti i luoghi   
 
-        try{ 
-
-            allLuoghi.forEach( async (luogo) => {
-
-                    new Promise(async (resolve, reject) => {
-
-                        var res = connection.query(query.getLuogoCard, [luogo.id_luogo]); //recupera tutti i luoghi memorizzati (in pending)
-                        
-                        resolve(res); //memorizza il risultato nella resolve
-
-                        promisesArray.push(res) //inserisce la promise nell'array
-                    })
-            })
+            }   
         }
-        catch(err){
-            console.log("err " , err);
-            await connection.rollback(); //effettua il commit delle transazioni
-    
-            res.status(401).json({
-                mess : err
-            })
+        else{
+            randomPlaces = luoghiCard;
         }
-         
-        //risolve le promise
-        Promise.all(promisesArray).then( (results) => {
+       
+        
 
-            for( let i = 0 ; i < promisesArray.length; i++){ 
-                luoghiCard.push(results[i][0][0]); //recupera il risultato (il primo risultato) di ogni query
+        //aggiungere i campi necessari per l'oggetto 'luogo' del frontend
+
+        randomPlaces.forEach( el => {
+            el['descrizione'] = ``;
+            el['accessibilita'] = ``;
+            if(el.orario_apertura == null){
+                el.orario_apertura = '';
             }
-                
- 
-            if(luoghiCard.length > 5){
-
-                for(let i=0; i<5; i++){ //Visualizza solo 5 luoghi nella homepage
-    
-                    var index = Math.floor(Math.random() * luoghiCard.length); //Seleziona un elemento random
-                    randomPlaces.push(luoghiCard[index]); //memorizza l'elemento in randomPlaces
-                    luoghiCard.splice(index, 1); //rimuove l'elemento dalla lista di tutti i luoghi   
-                 }   
+            if(el.orario_chiusura == null){
+                el.orario_chiusura = '';
+            }
+            if(el.costo_minimo == null){
+                el.costo_minimo = '';
+            }
+            if(el.costo_massimo == null){
+                el.costo_massimo = '';
+            }
+            if(el.foto_copertina != null && el.foto_copertina != ''){
+                el.foto_copertina = service.server + el.foto_copertina;
             }
             else{
-                randomPlaces = luoghiCard;
+                el.foto_copertina = '';
             }
-
+            el['voto_luogo'] = -1;
+            el['numero_votazioni'] = -1; 
+        })
+         
+       
+         
 
 
         // MOCK RESPONSE ********************************************//
 
-            randomPlaces.forEach( el => {
+        /*    randomPlaces.forEach( el => {
                 el['descrizione'] = `Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum`;
                 el['accessibilita'] = `There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable.`;
                 el['orario_apertura'] = '10:00';
@@ -304,17 +248,15 @@ exports.getAllPlaces = async (req, res, next) =>{
                 el['numero_votazioni'] = 120; 
                 // el.foto_copertina = service.server + el.foto_copertina;
             })
-    
+    */
     
 
-        })
-            
-
+    
 
         await connection.commit(); //effettua il commit delle transazioni
 
- 
         res.status(201).send(randomPlaces);
+
             
     }
     catch(err){ //se si verifica un errore 
@@ -336,7 +278,7 @@ exports.getAllPlaces = async (req, res, next) =>{
  * @param {*} res 
  * @param {*} next 
  */
-exports.getLuogo = async (req, res, next) => {
+exports.getPlace = async (req, res, next) => {
 
     var idLuogo = req.body.id_luogo;
 
@@ -347,42 +289,127 @@ exports.getLuogo = async (req, res, next) => {
         const [rows_luogo, field_luogo] = await connection.query(query.getLuogoById, [idLuogo]); //recupera tutti i luoghi
         var luogo = rows_luogo[0];
 
-        const [rows_descrizione, field_descrizione] = await connection.query(query.getDescrizioneByLuogo, [idLuogo]); //recupera la descrizione
+
+        //***** DESCRIZIONE PIU VOTATA */
+
+        const [rows_descrizione, field_descrizione] = await connection.query(query.getTopDescrizioneByLuogoWithUser, [idLuogo]); //recupera la miglior descrizione
         var descrizione = rows_descrizione[0];
+        console.log("*** descrizione più votata: ", rows_descrizione);
 
-        const [rows_accessibilita, field_accessibilita] = await connection.query(query.getAccessibilitaByLuogo, [idLuogo]); //recupera l'accessibilita
+        const[rows_descVotoTot, field_descVotoTot]= await connection.query(query.getTotalDescrizione,[idLuogo]) //recupera totale voti
+        var count_total_descrizione = rows_descVotoTot[0].count_total;
+         
+        
+        //*** ACCESSIVILITA PIU VOTATA */
+        const [rows_accessibilita, field_accessibilita] = await connection.query(query.getTopAccessibilitaByLuogoWithUser, [idLuogo]); //recupera la miglior accessibilita
         var accessibilita = rows_accessibilita[0];
+        console.log("*** accessibilita più votata: ", accessibilita);
 
-        const [rows_fotoCopertina, field_fotoCopertina] = await connection.query(query.getFotoCopertinaByLuogo, [idLuogo]); //recupera la fotoCopertina
+        const[rows_accVotoTot, field_accVotoTot]= await connection.query(query.getTotalAccessibilita,[idLuogo]) //recupera totale voti
+        var count_total_accessibilita = rows_accVotoTot[0].count_total;
+
+
+        const [rows_fotoCopertina, field_fotoCopertina] = await connection.query(query.getTopFotoCopertinaByLuogoWithUser, [idLuogo]); //recupera la miglior fotoCopertina
         var fotoCopertina = rows_fotoCopertina[0];
+        console.log("*** fotoCopertina più votata: ", fotoCopertina);
 
+
+        const [rows_gallery, field_gallery] = await connection.query(query.getTopGalleryByLuogoWithUser, [idLuogo]); //recupera la miglior gallery (con le relative foto) per il luogo
+        var gallery = rows_gallery;
+        console.log("** gallery ", gallery)
+
+        var fotoGallery = [];
+        gallery.forEach(el => {
+            fotoGallery.push(service.server+el.path)
+        })
+
+
+
+        
 
         //*** DATI OPZIONALI (Non necessariamente sono presenti) */
 
         const [rows_orari, field_orari] = await connection.query(query.getOrariByLuogo, [idLuogo]); //recupera gli orari di apertura per il luogo
         var orari = rows_orari[0];
-
+        if(orari == undefined){ //Se non sono presenti setta i valori come stringa vuota
+            orari = {};
+            orari.orario_apertura = "";
+            orari.orario_chiusura = "";
+        }
         const [rows_costo, field_costo] = await connection.query(query.getCostoByLuogo, [idLuogo]); //recupera i costi per il luogo
         var costo = rows_costo[0];
+        if(costo == undefined){ //Se non sono presenti, setta i valori come stringa vuota
+            costo = {};
+            costo['costo_minimo'] = "";
+            costo['costo_massimo'] = "";
+        }
 
+ 
+        //Calcolo media voto utenti (voti like * 0.2 + voti star * 02 / numero totali di voti)
 
-        var LuogoInfo = {
+        var like = (fotoCopertina.count_foto_copertina * 0.2) + (gallery[0].count_gallery * 0.2);
+        console.log("** like", like);
+
+        var star = (descrizione.count_descrizione * 0.2) + (accessibilita.count_accessibilita * 0.2);
+        console.log("** star", star);
+
+        var total = fotoCopertina.count_foto_copertina + gallery[0].count_gallery + count_total_descrizione + count_total_accessibilita;
+        console.log("** total", total);
+
+        var mediaVotiUtenti = ((like + star) / total).toFixed(2) * 5;
+        //console.log("** media", (fotoCopertina.count_foto_copertina * 0.2) + (gallery.count_gallery * 0.2) );
+         
+        
+
+        var placeDetails = {
             id_luogo : luogo.id_luogo,
             titolo : luogo.titolo,
             posizione : luogo.posizione,
             citta : luogo.citta,
             nazione : luogo.nazione,
+
             foto_copertina : service.server+fotoCopertina.foto_copertina,
+            count_foto_copertina: fotoCopertina.count_foto_copertina,
+            ambassador_foto_copertina_id : fotoCopertina.id_utente,
+            ambassador_foto_copertina_nome : fotoCopertina.nome,
+            ambassador_foto_copertina_cognome : fotoCopertina.cognome,
+            ambassador_foto_copertina : service.server+fotoCopertina.img,
+
             descrizione : descrizione.descrizione,
+            count_descrizione : descrizione.count_descrizione, //voti descrizione
+            count_total_descrizione : count_total_descrizione, //voti totali
+            ambassador_descrizione_id : descrizione.id_utente, 
+            ambassador_descrizione_nome : descrizione.nome,
+            ambassador_descrizione_cognome : descrizione.cognome,
+            ambassador_descrizione : service.server+descrizione.img,
+
             accessibilita : accessibilita.accessibilita,
-            orari_di_apertura : orari, //se presenti
-            costo : costo //se presenti
+            count_accessibilita : accessibilita.count_accessibilita,
+            count_total_accessibilita : count_total_accessibilita,
+            ambassador_accessibilita_id : accessibilita.id_utente,
+            ambassador_accessibilita_nome : accessibilita.nome,
+            ambassador_accessibilita_cognome : accessibilita.cognome,
+            ambassador_accessibilita : service.server+accessibilita.img,
+
+            orario_apertura : orari.orario_apertura, //se presenti
+            orario_chiusura : orari.orario_chiusura,
+            costo_minimo : costo.costo_minimo, //se presenti
+            costo_massimo : costo.costo_massimo,
+
+            id_gallery : gallery.id_gallery,
+            count_gallery : gallery.count_gallery,
+            gallery : fotoGallery,
+            ambassador_gallery_id : gallery[0].id_utente,
+            ambassador_gallery_nome : gallery[0].nome,
+            ambassador_gallery_cognome : gallery[0].cognome,
+            ambassador_gallery : service.server+gallery[0].img,
+
+            media_voti_utenti : mediaVotiUtenti
+
         }
 
-        
-        res.status(201).json({
-            luogo : LuogoInfo
-        })
+ 
+        res.status(201).send(placeDetails);
             
     }
     catch(err){ //se si verifica un errore 
@@ -398,3 +425,5 @@ exports.getLuogo = async (req, res, next) => {
 
 
 }
+
+

@@ -17,6 +17,7 @@ router.post('/votaEsperienzaTot',esperienzaController.votaEsperienzaTot)
 router.post('/votaFotoCopertina',esperienzaController.votaFotoCopertina)
 router.post('/votaDescrizione',esperienzaController.votaDescrizione)
 router.post('/votaAccessibilita',esperienzaController.votaAccessibilita)
+
 router.post('/getEsperienzeVotate', esperienzaController.getEsperienzeVotate); //Restituisce le eperienze in ordine di voto di un luogo
 
 router.post('/getEsperienzeRecenti', esperienzaController.getEsperienzeRecenti); //Restituisce le esperienze più recenti di un luogo

@@ -106,62 +106,64 @@ exports.getMyProfile = async (req, res, next) => {
 
     var idUtente = req.body.id_utente;
 
-    var promisesArray = [];
-    var experiences = [];
-
     const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    esperienzeDelLuogo = []; 
 
     try {
     
-        const [rows_experiences, field_experiences] = await connection.query(query.getMyExperience, [idUtente]);
-        var experiences = rows_experiences; // recupera tutte le esperienze dell'utente loggato
-        
-         experiences.forEach( exp => {
-            experiences.foto_copertina = service.server + exp.foto_copertina
-         })
-
-
-         try{ 
-            experiences.forEach( async (exp) => {
-                    new Promise(async (resolve, reject) => {
-                        var res = connection.query(query.getMyGalleryByExperience, [exp.id_esperienza]);; //recupera le gallery di tutte le esperienze dell'utente
-                        resolve(res); //memorizza il risultato nella resolve
-                        promisesArray.push(res) //inserisce la promise nell'array
-                    })
-            })
-        }
-        catch(err){
-            console.log("err " , err);
-            await connection.rollback(); //effettua il commit delle transazioni
     
-            res.status(401).json({
-                mess : err
-            })
-        }
- 
-        //risolve le promise
-        Promise.all(promisesArray).then( (results) => {
+        const[rows_exp, field_exp]= await connection.query(query.getExperiencesByUser,[idUtente]) //recupera le esperienze dell'utente
+        var experiences = rows_exp;
 
-            for( let i = 0 ; i < promisesArray.length; i++){
-                experiences[i]['gallery'] = results[i][0]; //associa ad ogni esperienza la relativa gallery
-            
-            };
+        const [rows_countEsperienze, field_countEsperienze] = await connection.query(query.getEsperienzeCountByLuogo, [idUtente]);
+        var experiencesCount = rows_countEsperienze; // recupera i count_esperienza per le esperienze dell'utente
 
-            experiences.forEach( (exp) => {
-                var gallery = exp.gallery;
+        const[rows_gallery, field_gallery] = await connection.query(query.getGalleryByEsperienzeOfUser, [idUtente]) //recupera le gallery delle esperienze dell'utente
+        var galleryComplete = rows_gallery;
 
-                gallery.forEach( (g) => { 
-                    exp.gallery.path = service.server + exp.path; //aggiornamento path img per ogni foto della gallery
-                })
+    
+        console.log("*** ex1", experiences);
+        console.log("*** ex2 ", experiencesCount);
+
+        console.log("*** ex3 ", galleryComplete);
+
+        /*
+        //AGGIUNTA COUNT ESPERIENZA
+        experiences.forEach( exp => { //merge dati dell'esperienza con i dati del count dei voti
+            exp['count_esperienza'] = 0;
+            experiencesCount.forEach( count => {
+                if(exp.id_esperienza == count.id_esperienza){
+                    exp['count_esperienza'] = count.count_esperienza;
+                }
             })
         })
 
-       
 
-        await connection.commit(); //effettua il commit delle transazioni
+        //AGGIUNTA GALLERY ESPERIENZA
+        experiences.forEach( exp => {  
+            exp.img = service.server+exp.img; //Immagine utente
+            exp.foto_copertina = service.server+exp.foto_copertina //immagine copertina
+            exp['gallery'] = [];
+            galleryComplete.forEach( gallery => {
+                if(exp.id_esperienza == gallery.id_esperienza){
+                   // console.log("*** GALLERY ", exp.gallery);
+                    exp.gallery.push(service.server+gallery.path); //immagine gallery
+                }
+            })
+        })
 
-
-        res.send(experiences);
+       //ordinamento in base al count_esperienza (dall'esperienza più votata alla meno votata)
+        experiences.sort( function(a, b) {
+            return b.count_esperienza - a.count_esperienza
+        })
+        
+        */
+        
+        res.status(201).json({
+            esperienze : experiences
+        })
+            
     }
     catch(err){ //se si verifica un errore 
         console.log("err " , err);

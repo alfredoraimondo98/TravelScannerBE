@@ -116,25 +116,26 @@ exports.getMyProfile = async (req, res, next) => {
         const[rows_exp, field_exp]= await connection.query(query.getExperiencesByUser,[idUtente]) //recupera le esperienze dell'utente
         var experiences = rows_exp;
 
-        const [rows_countEsperienze, field_countEsperienze] = await connection.query(query.getEsperienzeCountByLuogo, [idUtente]);
+        const [rows_countEsperienze, field_countEsperienze] = await connection.query(query.getEsperienzeCountByUser, [idUtente]);
         var experiencesCount = rows_countEsperienze; // recupera i count_esperienza per le esperienze dell'utente
 
         const[rows_gallery, field_gallery] = await connection.query(query.getGalleryByEsperienzeOfUser, [idUtente]) //recupera le gallery delle esperienze dell'utente
         var galleryComplete = rows_gallery;
 
     
-        console.log("*** ex1", experiences);
-        console.log("*** ex2 ", experiencesCount);
+        //console.log("*** ex1", experiences);
+        //console.log("*** ex2 ", experiencesCount);
 
-        console.log("*** ex3 ", galleryComplete);
+        //console.log("*** ex3 ", galleryComplete);
 
-        /*
+        
         //AGGIUNTA COUNT ESPERIENZA
         experiences.forEach( exp => { //merge dati dell'esperienza con i dati del count dei voti
             exp['count_esperienza'] = 0;
             experiencesCount.forEach( count => {
                 if(exp.id_esperienza == count.id_esperienza){
                     exp['count_esperienza'] = count.count_esperienza;
+                    exp['id_luogo'] = count.id_luogo;
                 }
             })
         })
@@ -155,13 +156,88 @@ exports.getMyProfile = async (req, res, next) => {
 
        //ordinamento in base al count_esperienza (dall'esperienza più votata alla meno votata)
         experiences.sort( function(a, b) {
-            return b.count_esperienza - a.count_esperienza
+            return b.data_creazione - a.data_creazione
         })
         
-        */
+    
         
         res.status(201).json({
             esperienze : experiences
+        })
+            
+    }
+    catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
+}
+
+
+
+
+exports.updateMyProfile = async (req, res, next) =>{
+
+    const errors = validationResult(req);
+
+    if(!errors.isEmpty()){ //verifica parametri sulla base dei controlli inseriti come middleware nella routes
+        return res.status(422).json({
+            message : 'Error input Parametri',
+            error : errors.array()
+        });
+    }
+    
+    var idUtente = req.body.id_utente;
+    var nome = req.body.nome;
+    var cognome = req.body.cognome;
+    var email = req.body.email;
+    var password = req.body.password;
+    var img;
+    if(req.file){
+        img = req.file.path.slice(6)  //recupera path relativo dell'img (in req.file) 
+    }
+    else{
+        img = null;
+    }
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    esperienzeDelLuogo = []; 
+
+    try {
+    
+        //Aggiornamento campi
+    
+        if(nome != null && nome != undefined){
+            const[rows_exp, field_exp]= await connection.query(query.updateMyName,[nome, idUtente]) //aggiorna nome utente
+        }
+
+        if(cognome != null && cognome != undefined){
+            const[rows_exp, field_exp]= await connection.query(query.updateMySurname,[cognome, idUtente]) //aggiorna cognome utente
+        }
+
+        if(email != null && email != undefined){
+            const[rows_exp, field_exp]= await connection.query(query.updateMyEmail,[email, idUtente]) //aggiorna email utente
+        }
+
+        if(password != null && password != undefined){
+            let hashedPassword = await bcrypt.hash(req.body.password, 12);
+            const[rows_exp, field_exp]= await connection.query(query.updateMyPassword,[hashedPassword, idUtente]) //aggiorna password utente
+        }
+
+        if(img != null && img != undefined){
+            const[rows_exp, field_exp]= await connection.query(query.updateMyImgProfile,[img, idUtente]) //aggiorna img profilo utente
+        }
+
+
+        
+        res.status(201).json({
+            mess : 'dati aggiornati correttamente'
         })
             
     }

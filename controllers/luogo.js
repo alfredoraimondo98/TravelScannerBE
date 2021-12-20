@@ -46,6 +46,7 @@ exports.createPlace = async (req, res, next) =>{
 
     if(req.files[0]){
         fotoCopertina = req.files[0].path.slice(6)  //recupera path relativo dell'img (in req.file) 
+        fotoCopertina = fotoCopertina.replace(/\\/g, "/");
     }
     else{
         fotoCopertina = '';
@@ -110,7 +111,9 @@ exports.createPlace = async (req, res, next) =>{
             //verifica se sono presenti foto per la gallery
             if(req.files.length > 1){ //sono presenti le foto per la gallery
                 for(let i = 1; i < req.files.length; i++){
-                    arrayGallery.push(req.files[i].path.slice(6)); //recupera i path delle foto gallery
+                    let img = req.files[i].path.slice(6);
+                    img = img.replace(/\\/g, "/");
+                    arrayGallery.push(img); //recupera i path delle foto gallery
 
                     const [rows_foto, field_foto] = await connection.query(query.insertFoto, [req.files[i].path.slice(6), idGallery]); //memorizza le foto della gallery
                 }

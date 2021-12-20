@@ -8,7 +8,7 @@ module.exports = {
                                             orari_di_apertura.orario_apertura, orari_di_apertura.orario_chiusura, costo.costo_minimo, costo.costo_massimo
                                     FROM luogo JOIN costo JOIN orari_di_apertura JOIN esperienza
                                         ON luogo.id_luogo = costo.id_luogo AND luogo.id_luogo = orari_di_apertura.id_luogo AND luogo.id_luogo = esperienza.id_luogo
-                                        ORDER BY esperienza.count_foto_copertina DESC, esperienza.data_creazione DESC
+                                        ORDER BY esperienza.count_foto_copertina DESC
                                     `,
 
     getLuogoById : "SELECT * FROM luogo WHERE id_luogo = ?", 
@@ -21,8 +21,7 @@ module.exports = {
                                         ON gallery.id_esperienza = esperienza.id_esperienza
                                         WHERE esperienza.id_luogo = ?
                                         ORDER BY gallery.count_gallery DESC LIMIT 1 
-                            )
-                            `,
+                            )`,
 
     getTopDescrizioneByLuogoWithUser : `SELECT esperienza.id_esperienza, descrizione, count_descrizione, esperienza.id_utente, 
                                                         utente.nome, utente.cognome, utente.img, creare_esperienza.data_creazione 
@@ -208,4 +207,15 @@ module.exports = {
     updateVotoAccessibilita: "UPDATE esperienza SET count_accessibilita = ?, count_total_accessibilita = ? WHERE id_esperienza= ?",
     updateVoto: "UPDATE voto SET voto = ? WHERE id_esperienza = ? AND id_utente = ? AND tipo_voto = ?",
     updateImgUser : "UPDATE utente SET img = ? WHERE id_utente = ?", //aggiorna l'immagine dell'utente  //aggiorna il voto della descrizione in voto in caso in cui un utente volesse rivotare
+
+
+
+
+    updateMyName: "UPDATE utente SET nome = ? WHERE id_utente = ?",
+    updateMySurname: "UPDATE utente SET cognome = ? WHERE id_utente = ?",
+    updateMyEmail: "UPDATE utente SET email = ? WHERE id_utente = ?",
+    updateMyPassword: "UPDATE utente SET password = ? WHERE id_utente = ?",
+    updateMyImgProfile: "UPDATE utente SET img = ? WHERE id_utente = ?",
+
+
 }

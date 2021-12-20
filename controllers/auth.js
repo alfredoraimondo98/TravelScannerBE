@@ -28,13 +28,14 @@ exports.register = async (req, res, next) => {
     var password = await bcrypt.hash(req.body.password, 12); //cripta password
     var dataDiNascita = req.body.data_di_nascita;
     var badge = "tipo gamification"; //badge che rappresenta la tipologia di utente (da definire)
-    var img = '\\images\\logo.jpg' //immagine profilo utente (default)
+    var img = '/images/logo.jpg' //immagine profilo utente (default)
 
     /*
     if(req.file){ //Se presente la foto
         img = req.file.path.slice(6); //recupera path relativo dell'img (in req.file) 
     }
     */
+
     if(await verifyMail(email)){ //se la mail è già presente viene restituito TRUE e non si può procedere alla registrazione
         res.status(401).json({
             mess : 'email già presente'
@@ -49,9 +50,11 @@ exports.register = async (req, res, next) => {
     
         try {
             const [rows, field] = await connection.query(query.insertUser, [nome, cognome, email, password, dataDiNascita, badge, img]); //Creazione utente
+            var idUtente = rows.insertId;
 
             res.status(201).json({
-                mess : 'utente inserito correttamente'
+                //mess : 'utente inserito correttamente'
+                id_utente : idUtente
             })
             
         }
@@ -193,7 +196,8 @@ exports.updateImg = async(req, res, next) => {
     try{ 
         if(req.file){ //Se presente la foto
             img = req.file.path.slice(6); //recupera path relativo dell'img (in req.file) 
-
+            img = img.replace(/\\/g, "/");
+            
             const [rows, field] = await database.query(query.updateImgUser, [img, idUtente]); //aggiorna la foto dell'utente
         }
 

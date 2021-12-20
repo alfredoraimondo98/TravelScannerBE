@@ -28,4 +28,7 @@ router.post('/login',
 
 router.post('/verifyMail', [], authController.verifyEmail); 
 
+
+router.post('/updateImg', upload.single('img'), authController.updateImg); //aggiorna l'immagine dell'utente
+
 module.exports = router;

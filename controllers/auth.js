@@ -28,12 +28,13 @@ exports.register = async (req, res, next) => {
     var password = await bcrypt.hash(req.body.password, 12); //cripta password
     var dataDiNascita = req.body.data_di_nascita;
     var badge = "tipo gamification"; //badge che rappresenta la tipologia di utente (da definire)
-    var img; //immagine profilo utente
+    var img = '\\images\\logo.jpg' //immagine profilo utente (default)
 
+    /*
     if(req.file){ //Se presente la foto
         img = req.file.path.slice(6); //recupera path relativo dell'img (in req.file) 
     }
-
+    */
     if(await verifyMail(email)){ //se la mail è già presente viene restituito TRUE e non si può procedere alla registrazione
         res.status(401).json({
             mess : 'email già presente'
@@ -110,7 +111,8 @@ exports.login = async (req, res, next) => {
                 message : 'Non autorizzato: password errata!' //nega l'accesso
             })
         }
-
+        
+        
 
         res.status(201).json({ 
             id_utente : loginUser.id_utente,
@@ -175,4 +177,48 @@ exports.login = async (req, res, next) => {
     else{
         res.status(201).send(false); //MAIL NON PRESENTE = FALSE (Si può procedere alla registrazione)
     }
+}
+
+
+exports.updateImg = async(req, res, next) => {
+    
+    var idUtente = req.body.id_utente
+    var img; //immagine profilo utente
+
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+
+
+    try{ 
+        if(req.file){ //Se presente la foto
+            img = req.file.path.slice(6); //recupera path relativo dell'img (in req.file) 
+
+            const [rows, field] = await database.query(query.updateImgUser, [img, idUtente]); //aggiorna la foto dell'utente
+        }
+
+
+        const [rows_u, field_u] = await database.query(query.getUserById, [idUtente]); //recupera l'utente aggiornato da restituire
+        var user = rows_u[0];
+
+        res.status(201).json({ 
+            id_utente : user.id_utente,
+            email : user.email,
+            password : user.password,
+            nome : user.nome,
+            cognome : user.cognome,
+            //data_di_nascita : loginUser.data_di_nascita,
+            badge : user.badge,
+            img : service.server + user.img
+        });
+    }
+    catch(err) {
+
+        return res.status(422).json({
+            message : err
+        });
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    };
 }

@@ -702,9 +702,5 @@ exports.getVotoEffettuatoAccesibilita = async(req,res,next)=>{
     }
     finally{
         await connection.release(); //rilascia la connessione al termine delle operazioni 
-    }
-
-
+    }    
 }
-
-

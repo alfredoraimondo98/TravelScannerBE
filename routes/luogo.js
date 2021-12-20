@@ -20,4 +20,6 @@ router.get('/getRandomPlaces', luogoController.getRandomPlaces);; //Restituisce 
 
 router.post('/getPlace', luogoController.getPlace); //recupera le info per il luogo con un determinato id
 
+
+
 module.exports = router;

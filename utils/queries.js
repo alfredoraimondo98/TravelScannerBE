@@ -96,6 +96,7 @@ module.exports = {
             
 
     getNumVotiFotoCopertina: 'SELECT count_foto_copertina from esperienza WHERE id_esperienza = ?',
+    getNumVotiFotoGallery: 'SELECT count_gallery from gallery WHERE id_esperienza = ?',
 
 
     getEsperienzeByLuogo : "SELECT * FROM esperienza WHERE id_luogo = ?",
@@ -166,12 +167,13 @@ module.exports = {
     insertEsperienza : "INSERT INTO esperienza (descrizione, count_descrizione, foto_copertina, count_foto_copertina, accessibilita, count_accessibilita, id_luogo) VALUES (?, ?, ?, ?, ?, ?, ?)",
     insertOrario : "INSERT INTO orari_di_apertura (id_luogo, orario_apertura, orario_chiusura) VALUES (?, ? , ?)",
     insertCosto : "INSERT INTO costo (id_luogo, costo_minimo, costo_massimo) VALUES (?, ? , ?)",
-    insertGallery: "INSERT INTO gallery(count,id_esperienza) VALUES (?,?)",
+    insertGallery: "INSERT INTO gallery(count_gallery,id_esperienza) VALUES (?,?)",
     insertFoto: "INSERT INTO foto(path,id_gallery) VALUES (?,?)",
     insertVoto: "INSERT INTO voto(id_utente, id_esperienza, voto, tipo_voto) VALUES (?,?,?,?)",
     insertUserCreateExperience : "INSERT INTO creare_esperienza(id_utente, id_esperienza, data_creazione) VALUES (?, ?, ?)",
     createGallery : "INSERT INTO gallery(count, id_esperienza) VALUES (?, ?)",
     insertFoto : "INSERT INTO foto(path, id_gallery) VALUES (?, ?)",
+   
 
     verifyMail : "SELECT email FROM utente WHERE email = ?",
     verifyLuogo : "SELECT titolo FROM luogo WHERE titolo = ?",
@@ -179,8 +181,9 @@ module.exports = {
     verifyVotoTipo : "SELECT voto FROM voto WHERE id_utente = ? AND id_esperienza = ? AND tipo_voto = ?",
 
     updateNumVotiFotoCopertina: "UPDATE esperienza SET count_foto_copertina = ? WHERE id_esperienza= ?",
-    updateVotoDescrizione: "UPDATE esperienza SET count_descrizione = ? WHERE id_esperienza= ?", //aggiorna il voto della descrizione in esperienza
-    updateVotoAccessibilita: "UPDATE esperienza SET count_accessibilita = ? WHERE id_esperienza= ?",
-    updateVoto: "UPDATE voto SET voto = ? WHERE id_esperienza = ? AND id_utente = ? AND tipo_voto = ?", //aggiorna il voto della descrizione in voto in caso in cui un utente volesse rivotare
-    updateImgUser : "UPDATE utente SET img = ? WHERE id_utente = ?", //aggiorna l'immagine dell'utente                           
+    updateNumVotiFotoGallery: "UPDATE gallery SET count_gallery = ? WHERE id_esperienza= ?",
+    updateVotoDescrizione: "UPDATE esperienza SET count_descrizione = ?, count_total_descrizione = ? WHERE id_esperienza= ?", //aggiorna il voto della descrizione in esperienza
+    updateVotoAccessibilita: "UPDATE esperienza SET count_accessibilita = ?, count_total_accessibilita = ? WHERE id_esperienza= ?",
+    updateVoto: "UPDATE voto SET voto = ? WHERE id_esperienza = ? AND id_utente = ? AND tipo_voto = ?",
+    updateImgUser : "UPDATE utente SET img = ? WHERE id_utente = ?", //aggiorna l'immagine dell'utente  //aggiorna il voto della descrizione in voto in caso in cui un utente volesse rivotare
 }

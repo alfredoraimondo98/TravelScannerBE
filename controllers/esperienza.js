@@ -16,25 +16,20 @@ exports.createEsperienza = async (req, res, next)=>{
         });
     }
     
-    var idEsperienza = req.body.idEsperienza; // ** id utente che sta creando il nuovo luogo
-
-    // ** dati per il luogo ricevuti in input
+    
+    
     var accessibilita = req.body.accessibilita
-    var countAccessibilita=0
-
     var descrizione= req.body.descrizione
-    var countDescrizione=0
-
-  
-    var countFotoCopertina=0  
-
     var idUtente= req.body.idUtente
     var idLuogo= req.body.idLuogo
+    
 
-    dataCreazione = format(new Date(), 'YYYY-MM-DD');
-
-    var idGallery= req.body.idGallery
+    var countDescrizione=0
+    var countAccessibilita=0
+    var countFotoCopertina=0  
+    var dataCreazione = format(new Date(), 'YYYY-MM-DD');
     var fotos=[]
+    console.log("ciao")
     
     for(var i=0; i<req.files.length; i++){
         fotos.push(req.files[i].path.slice(6))
@@ -55,9 +50,16 @@ exports.createEsperienza = async (req, res, next)=>{
         const [rows_esperienza, field_esperienza] = await connection.query(query.insertEsperienza, [descrizione, countDescrizione,fotoCopertina,countFotoCopertina,
             accessibilita, countAccessibilita,idUtente,dataCreazione,idLuogo]);
 
+        
+
         var idEsperienza = rows_esperienza.insertId;
 
+        
+
+        await connection.query(query.insertUserCreateExperience, [idUtente,idEsperienza,dataCreazione]);
+
         const [rows_gallery,field_gallery]= await connection.query(query.insertGallery,[0,idEsperienza])
+
         var idGallery = rows_gallery.insertId;
 
         for(var i=1; i<fotos.length; i++){
@@ -144,7 +146,6 @@ exports.votaFotoCopertina = async (req, res, next)=>{
     var idEsperienza= req.body.idEsperienza
     var idUtente= req.body.idUtente
     
-    var fotoCopertina= req.body.fotoCopertina
     
     const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
     
@@ -160,6 +161,57 @@ exports.votaFotoCopertina = async (req, res, next)=>{
         const [rows_voto, field_voto] = await connection.query(query.insertVoto, [idUtente,idEsperienza,1,"fotoCopertina"]);
         const [rows_votoFotoCopertina, field_votoFotoCopertina] = await connection.query(query.getNumVotiFotoCopertina, [idEsperienza]);
         await connection.query(query.updateNumVotiFotoCopertina,[rows_votoFotoCopertina[0].count_foto_copertina+1,idEsperienza])
+        
+        await connection.commit(); //effettua il commit delle transazioni
+    
+        res.status(201).json({
+            mess : 'ok'
+        })
+    }
+        else
+        {
+           
+            res.status(201).json({
+                mess : 'già votato'
+            })
+        }   
+        
+    }
+    catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+        await connection.rollback(); //effettua il commit delle transazioni
+    
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
+}
+
+exports.votaFotoGallery = async (req, res, next)=>{
+    //console.log("ueueu")
+    var idEsperienza= req.body.idEsperienza
+    var idUtente= req.body.idUtente
+    
+    
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+    
+        await connection.beginTransaction(async function (err) { //avvia una nuova transazione
+            if (err) { throw err; }
+        });
+    
+    
+    try{
+        const [rows_verify, field_verify]= await connection.query(query.verifyVotoTipo,[idUtente, idEsperienza,"fotoGallery"])
+        if (rows_verify[0]==undefined){
+
+        const [rows_voto, field_voto] = await connection.query(query.insertVoto, [idUtente,idEsperienza,1,"fotoGallery"]);
+
+        const [rows_votoFotoGallery, field_votoFotoGallery] = await connection.query(query.getNumVotiFotoGallery, [idEsperienza]);
+
+        await connection.query(query.updateNumVotiFotoGallery,[rows_votoFotoGallery[0].count_gallery+1,idEsperienza])
         
         await connection.commit(); //effettua il commit delle transazioni
     
@@ -206,9 +258,10 @@ exports.votaDescrizione = async (req, res, next)=>{
             await connection.query(query.insertVoto,[idUtente,idEsperienza,votoDescrizione,"descrizione"])
 
             const[rows_votoTot, field_votoTot]= await connection.query(query.getTotVotieSomma,[idEsperienza,"descrizione"])
-            var mediaVoti=rows_votoTot[0].sommaVoti/rows_votoTot[0].countVoti
+            sommaVoti=rows_votoTot.sommaVoti
+            var mediaVoti=sommaVoti/rows_votoTot[0].countVoti
 
-            await connection.query(query.updateVotoDescrizione,[mediaVoti,idEsperienza])
+            await connection.query(query.updateVotoDescrizione,[mediaVoti,sommaVoti,idEsperienza])
             
 
             
@@ -223,8 +276,11 @@ exports.votaDescrizione = async (req, res, next)=>{
             await connection.query(query.updateVoto,[votoDescrizione,idEsperienza,idUtente,"descrizione"])
 
             const[rows_votoTot, field_votoTot]= await connection.query(query.getTotVotieSomma,[idEsperienza,"descrizione"])
-            var mediaVoti=rows_votoTot[0].sommaVoti/rows_votoTot[0].countVoti
-            await connection.query(query.updateVotoDescrizione,[mediaVoti,idEsperienza])
+
+            sommaVoti=rows_votoTot.sommaVoti
+
+            var mediaVoti=sommaVoti/rows_votoTot[0].countVoti
+            await connection.query(query.updateVotoDescrizione,[mediaVoti,sommaVoti,idEsperienza])
 
             await connection.commit();
             res.status(201).json({
@@ -264,9 +320,10 @@ exports.votaAccessibilita = async (req, res, next)=>{
             await connection.query(query.insertVoto,[idUtente,idEsperienza,votoAccessibilita,"accessibilita"])
 
             const[rows_votoTot, field_votoTot]= await connection.query(query.getTotVotieSomma,[idEsperienza,"accessibilita"])
-            var mediaVoti=rows_votoTot[0].sommaVoti/rows_votoTot[0].countVoti
+            var sommaVoti=rows_votoTot[0].sommaVoti
+            var mediaVoti=sommaVoti/rows_votoTot[0].countVoti
 
-            await connection.query(query.updateVotoAccessibilita,[mediaVoti,idEsperienza])
+            await connection.query(query.updateVotoAccessibilita,[mediaVoti,sommaVoti,idEsperienza])
             
 
             
@@ -281,8 +338,9 @@ exports.votaAccessibilita = async (req, res, next)=>{
             await connection.query(query.updateVoto,[votoAccessibilita,idEsperienza,idUtente,"accessibilita"])
             
             const[rows_votoTot, field_votoTot]= await connection.query(query.getTotVotieSomma,[idEsperienza,"accessibilita"])
-            var mediaVoti=rows_votoTot[0].sommaVoti/rows_votoTot[0].countVoti
-            await connection.query(query.updateVotoAccessibilita,[mediaVoti,idEsperienza])
+            var sommaVoti=rows_votoTot[0].sommaVoti
+            var mediaVoti=sommaVoti/rows_votoTot[0].countVoti
+            await connection.query(query.updateVotoAccessibilita,[mediaVoti,sommaVoti,idEsperienza])
 
             await connection.commit();
             res.status(201).json({
@@ -467,3 +525,186 @@ exports.votaAccessibilita = async (req, res, next)=>{
     }
 
 }
+
+exports.getVotoEffettuatoDescrizione = async(req,res,next)=>{
+    var idEsperienza= req.body.id_esperienza;
+    var idUtente= req.body.id_utente;
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    await connection.beginTransaction(async function (err) { //avvia una nuova transazione
+        if (err) { throw err; }
+    });
+
+    try{
+        const [rows_verify, field_verify]= await connection.query(query.verifyVotoTipo,[idUtente, idEsperienza,"descrizione"])
+        if(rows_verify[0]==undefined){
+            
+
+            
+            await connection.commit(); //effettua il commit delle transazioni
+
+            res.status(201).json({
+                voto_descrizione: 0
+            })
+        }
+        else{
+            
+            voto_descrizione= rows_verify[0].voto
+
+            await connection.commit();
+            res.status(201).json({
+                voto_descrizione: voto_descrizione
+            })
+        }
+    }catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
+
+
+}
+
+exports.getVotoEffettuatoFotoCopertina = async(req,res,next)=>{
+    var idEsperienza= req.body.id_esperienza;
+    var idUtente= req.body.id_utente;
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    await connection.beginTransaction(async function (err) { //avvia una nuova transazione
+        if (err) { throw err; }
+    });
+
+    try{
+        const [rows_verify, field_verify]= await connection.query(query.verifyVotoTipo,[idUtente, idEsperienza,"fotoDescrizione"])
+        if(rows_verify[0]==undefined){
+            
+
+            
+            await connection.commit(); //effettua il commit delle transazioni
+
+            res.status(201).json({
+                voto_foto_copertina: 0
+            })
+        }
+        else{
+            
+            voto_foto_copertina= rows_verify[0].voto
+
+            await connection.commit();
+            res.status(201).json({
+                voto_foto_copertina: voto_foto_copertina
+            })
+        }
+    }catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
+
+
+}
+
+exports.getVotoEffettuatoFotoGallery = async(req,res,next)=>{
+    var idEsperienza= req.body.id_esperienza;
+    var idUtente= req.body.id_utente;
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    await connection.beginTransaction(async function (err) { //avvia una nuova transazione
+        if (err) { throw err; }
+    });
+
+    try{
+        const [rows_verify, field_verify]= await connection.query(query.verifyVotoTipo,[idUtente, idEsperienza,"fotoGallery"])
+        if(rows_verify[0]==undefined){
+            
+
+            
+            await connection.commit(); //effettua il commit delle transazioni
+
+            res.status(201).json({
+                voto_foto_gallery: 0
+            })
+        }
+        else{
+            
+            voto_foto_gallery= rows_verify[0].voto
+
+            await connection.commit();
+            res.status(201).json({
+                voto_foto_gallery: voto_foto_gallery
+            })
+        }
+    }catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
+
+
+}
+
+
+exports.getVotoEffettuatoAccesibilita = async(req,res,next)=>{
+    var idEsperienza= req.body.id_esperienza;
+    var idUtente= req.body.id_utente;
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    await connection.beginTransaction(async function (err) { //avvia una nuova transazione
+        if (err) { throw err; }
+    });
+
+    try{
+        const [rows_verify, field_verify]= await connection.query(query.verifyVotoTipo,[idUtente, idEsperienza,"accessibilita"])
+        if(rows_verify[0]==undefined){
+            
+
+            
+            await connection.commit(); //effettua il commit delle transazioni
+
+            res.status(201).json({
+                voto_accessibilita: 0
+            })
+        }
+        else{
+            
+            voto_accessibilita= rows_verify[0].voto
+
+            await connection.commit();
+            res.status(201).json({
+                voto_accessibilita: voto_accessibilita
+            })
+        }
+    }catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
+
+
+}
+
+

@@ -83,12 +83,7 @@ module.exports = {
                     ORDER BY count_foto_copertina DESC, data_creazione_esperienza DESC`, //Restituisce i dati per una card di un luogo con la foto_copertina più votata in prima posizione nel risultato
      */   
 
-
-  //  getTopCoverPhotoByLuogo : 'SELECT foto_copertina, count_foto_copertina FROM esperienza WHERE id_luogo = ? ORDER BY count_foto_copertina DESC, data_creazione DESC LIMIT 1',
-   // getTopDescriptionByLuogo : 'SELECT descrizione, count_descrizione FROM esperienza WHERE id_luogo = ? ORDER BY count_descrizione DESC, data_creazione DESC LIMIT 1',
-    //getTopAccessibilityByLuogo : 'SELECT accessibilita, count_accessibilita FROM esperienza WHERE id_luogo = ? ORDER BY count_accessibilita DESC, data_creazione DESC LIMIT 1',
-   // getTopGalleryByLuogo : 'SELECT id_gallery, count FROM gallery WHERE id_esperienza = ? ORDER BY count_accessibilita DESC, data_creazione DESC LIMIT 1',
-  //  getExperiencesByLuogo: `SELECT id_esperienza FROM esperienza WHERE id_luogo = ?`,
+ 
 
      getLuogoCard : `SELECT luogo.id_luogo, luogo.titolo, luogo.posizione, luogo.citta, luogo.nazione, 
                         esperienza.foto_copertina, esperienza.count_foto_copertina, 
@@ -105,22 +100,19 @@ module.exports = {
 
     getEsperienzeByLuogo : "SELECT * FROM esperienza WHERE id_luogo = ?",
 
-    getEsperienzeCountByLuogo : ` SELECT esperienza.id_esperienza, esperienza.descrizione, esperienza.foto_copertina, esperienza.accessibilita, 
-                                        count(esperienza.id_esperienza) as count_esperienza, esperienza.data_creazione
-                                FROM esperienza JOIN voto 
-                                ON esperienza.id_esperienza = voto.id_esperienza
-                                WHERE esperienza.id_luogo = ? AND voto.tipo_voto = 'esperienza'
-                                GROUP BY esperienza.id_esperienza 
-                                ORDER BY count_esperienza DESC`, //Restituisce le esperienze di un luogo con il count per i voti di tipo "esperienza"
-    
-    getEsperienzeCountByLuogo : ` SELECT esperienza.id_esperienza, esperienza.descrizione, esperienza.foto_copertina, esperienza.accessibilita, 
-                                        count(esperienza.id_esperienza) as count_esperienza, esperienza.data_creazione
-                                FROM esperienza JOIN voto 
-                                ON esperienza.id_esperienza = voto.id_esperienza
-                                WHERE esperienza.id_luogo = ? AND voto.tipo_voto = 'esperienza'
-                                GROUP BY esperienza.id_esperienza 
-                                ORDER BY count_esperienza DESC`, //Restituisce le esperienze di un luogo con il count per i voti di tipo "esperienza" in ordine di voti
+    getEsperienzeCountByLuogo : ` SELECT voto.id_esperienza, tipo_voto, creare_esperienza.data_creazione, COUNT(*) as count_esperienza 
+                                    FROM esperienza JOIN voto JOIN creare_esperienza
+                                    ON voto.id_esperienza = esperienza.id_esperienza
+                                    AND esperienza.id_esperienza = creare_esperienza.id_esperienza
+                                    WHERE tipo_voto = 'esperienza' AND id_luogo = ?
+                                    GROUP BY voto.id_esperienza
+                                    ORDER BY count_esperienza DESC`, //Restituisce le esperienze di un luogo con il count per i voti di tipo "esperienza" in ordine di voti
 
+    getDataCreazioneEsperienzaByLuogo : `SELECT esperienza.id_esperienza, creare_esperienza.data_creazione
+                                            FROM esperienza JOIN creare_esperienza
+                                            ON esperienza.id_esperienza = creare_esperienza.id_esperienza
+                                            WHERE esperienza.id_luogo = ?
+                                            ORDER BY creare_esperienza.data_creazione DESC`, //recuperare le date di creazione delle esperienze di un luogo
 
     getEsperienzeDataCreazioneByLuogo : ` SELECT esperienza.id_esperienza, esperienza.descrizione, esperienza.foto_copertina, esperienza.accessibilita, 
                                                 count(esperienza.id_esperienza) as count_esperienza, esperienza.data_creazione
@@ -131,7 +123,7 @@ module.exports = {
                                         ORDER BY data_creazione DESC`, //Restituisce le esperienze di un luogo con il count per i voti di tipo "esperienza" in ordine di data creazione                                 
 
 
-    getGalleryByEsperienza : ` SELECT gallery.id_gallery, gallery.id_esperienza, foto.id_foto, foto.path, gallery.count 
+    getGalleryByEsperienza : ` SELECT gallery.id_gallery, gallery.id_esperienza, foto.id_foto, foto.path, gallery.count_gallery 
                                 FROM gallery JOIN foto ON gallery.id_gallery = foto.id_gallery 
                                 WHERE gallery.id_esperienza = ? `, //recupera la gallery di foto di una data esperienza
 
@@ -155,6 +147,20 @@ module.exports = {
                                                     ORDER BY count_accessibilita DESC, creare_esperienza.data_creazione DESC LIMIT 1
                             )`, //recupera totale voti accessibilità per la miglior accessibilità di un luogo
 
+    
+    getEsperienzeWithUserByLuogo : `SELECT esperienza.*, creare_esperienza.data_creazione, utente.id_utente, utente.nome, utente.cognome, utente.img
+                                    FROM heroku_a860383571f3622.esperienza JOIN creare_esperienza JOIN utente
+                                    ON esperienza.id_esperienza = creare_esperienza.id_esperienza
+                                    AND creare_esperienza.id_utente = utente.id_utente
+                                    WHERE esperienza.id_luogo=?`, //recupera le esperienze e l'utente che ha creato l'esperienza (per tutte le esperienze di un luogo)
+
+
+    getGalleryByLuogo : `SELECT gallery.*, foto.id_foto, foto.path
+                            FROM heroku_a860383571f3622.esperienza JOIN gallery JOIN foto
+                            ON esperienza.id_esperienza = gallery.id_esperienza
+                            AND gallery.id_gallery = foto.id_gallery
+                            WHERE esperienza.id_luogo=?`, //recupera la gallery per ogni esperienza del luogo (per tutte le esperienze di un luogo)
+
     insertUser : "INSERT INTO utente (nome, cognome, email, password, data_di_nascita, badge, img) VALUES (?, ?, ?, ?, ?, ?, ?)",
     insertLuogo : "INSERT INTO luogo (titolo, posizione, citta, nazione, id_utente, data_creazione) VALUES (?, ?, ?, ?, ?, ?)",
     insertEsperienza : "INSERT INTO esperienza (descrizione, count_descrizione, foto_copertina, count_foto_copertina, accessibilita, count_accessibilita, id_luogo) VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -175,5 +181,6 @@ module.exports = {
     updateNumVotiFotoCopertina: "UPDATE esperienza SET count_foto_copertina = ? WHERE id_esperienza= ?",
     updateVotoDescrizione: "UPDATE esperienza SET count_descrizione = ? WHERE id_esperienza= ?", //aggiorna il voto della descrizione in esperienza
     updateVotoAccessibilita: "UPDATE esperienza SET count_accessibilita = ? WHERE id_esperienza= ?",
-    updateVoto: "UPDATE voto SET voto = ? WHERE id_esperienza = ? AND id_utente = ? AND tipo_voto = ?" //aggiorna il voto della descrizione in voto in caso in cui un utente volesse rivotare
+    updateVoto: "UPDATE voto SET voto = ? WHERE id_esperienza = ? AND id_utente = ? AND tipo_voto = ?", //aggiorna il voto della descrizione in voto in caso in cui un utente volesse rivotare
+    updateImgUser : "UPDATE utente SET img = ? WHERE id_utente = ?", //aggiorna l'immagine dell'utente                           
 }

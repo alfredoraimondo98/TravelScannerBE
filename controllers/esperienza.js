@@ -64,6 +64,7 @@ exports.createEsperienza = async (req, res, next)=>{
             console.log(fotos[i])
             const[rows_foto,field_foto]= await connection.query(query.insertFoto,[fotos[i],idGallery])
         }
+        
             
 
         await connection.commit(); //effettua il commit delle transazioni
@@ -320,19 +321,53 @@ exports.votaAccessibilita = async (req, res, next)=>{
     try {
     
         const [rows_countEsperienze, field_countEsperienze] = await connection.query(query.getEsperienzeCountByLuogo, [idLuogo]);
-        var esperienzeCount = rows_countEsperienze; // recupera tutte le esperienze del luogo con i count relativi alla votazione di tipo "esperienza"
+        var experiencesCount = rows_countEsperienze; // recupera tutte le esperienze del luogo con i count relativi alla votazione di tipo "esperienza"
 
-        //recupera la gallery di ogni esperienza
-        for(let i=0; i<esperienzeCount.length; i++){
-            const [rows_gallery, field_gallery] = await connection.query(query.getGalleryByEsperienza, [esperienzeCount[i].id_esperienza]); //recupera le gallery delle esperienze
-            rows_gallery.forEach( r => { 
-                r.path = service.server + r.path //Creazione path per le img
+        const[rows_exp, field_exp]= await connection.query(query.getEsperienzeWithUserByLuogo,[idLuogo]) //recupera le esperienze e gli utenti che le hanno create
+        var experiences = rows_exp;
+
+        const[rows_gallery, field_gallery] = await connection.query(query.getGalleryByLuogo, [idLuogo]) //recupera le gallery delle esperienze di un luogo
+        var galleryComplete = rows_gallery;
+
+        //console.log("*** ex1 ", experiencesCount);
+    
+        //console.log("*** ex2", experiences);
+        //console.log("*** ex3 ", galleryComplete);
+
+
+        //AGGIUNTA COUNT ESPERIENZA
+        experiences.forEach( exp => { //merge dati dell'esperienza con i dati del count dei voti
+            exp['count_esperienza'] = 0;
+            experiencesCount.forEach( count => {
+                if(exp.id_esperienza == count.id_esperienza){
+                    exp['count_esperienza'] = count.count_esperienza;
+                }
             })
-            esperienzeCount[i].gallery = rows_gallery
-        }
+        })
+
+
+        //AGGIUNTA GALLERY ESPERIENZA
+        experiences.forEach( exp => {  
+            exp.img = service.server+exp.img; //Immagine utente
+            exp.foto_copertina = service.server+exp.foto_copertina //immagine copertina
+            exp['gallery'] = [];
+            galleryComplete.forEach( gallery => {
+                if(exp.id_esperienza == gallery.id_esperienza){
+                   // console.log("*** GALLERY ", exp.gallery);
+                    exp.gallery.push(service.server+gallery.path); //immagine gallery
+                }
+            })
+        })
+
+       //ordinamento in base al count_esperienza (dall'esperienza più votata alla meno votata)
+        experiences.sort( function(a, b) {
+            return b.count_esperienza - a.count_esperienza
+        })
+        
+
         
         res.status(201).json({
-            esperienze : esperienzeCount
+            esperienze : experiences
         })
             
     }
@@ -369,21 +404,54 @@ exports.votaAccessibilita = async (req, res, next)=>{
 
     try {
     
-        const [rows_countEsperienze, field_countEsperienze] = await connection.query(query.getEsperienzeDataCreazioneByLuogo, [idLuogo]);
-        var esperienzeCount = rows_countEsperienze; // recupera tutte le esperienze del luogo con i count relativi alla votazione di tipo "esperienza" in ordine di data creazione
+        const [rows_countEsperienze, field_countEsperienze] = await connection.query(query.getEsperienzeCountByLuogo, [idLuogo]);
+        var experiencesCount = rows_countEsperienze; // recupera tutte le esperienze del luogo con i count relativi alla votazione di tipo "esperienza"
 
-        //recupera la gallery di ogni esperienza
-        for(let i=0; i<esperienzeCount.length; i++){
-            const [rows_gallery, field_gallery] = await connection.query(query.getGalleryByEsperienza, [esperienzeCount[i].id_esperienza]); //recupera le gallery delle esperienze
-            rows_gallery.forEach( r => { 
-                r.path = service.server + r.path //Creazione path per le img
+        const[rows_exp, field_exp]= await connection.query(query.getEsperienzeWithUserByLuogo,[idLuogo]) //recupera le esperienze e gli utenti che le hanno create
+        var experiences = rows_exp;
+
+        const[rows_gallery, field_gallery] = await connection.query(query.getGalleryByLuogo, [idLuogo]) //recupera le gallery delle esperienze di un luogo
+        var galleryComplete = rows_gallery;
+
+        //console.log("*** ex1 ", experiencesCount);
+    
+        //console.log("*** ex2", experiences);
+        //console.log("*** ex3 ", galleryComplete);
+
+
+        //AGGIUNTA COUNT ESPERIENZA
+        experiences.forEach( exp => { //merge dati dell'esperienza con i dati del count dei voti
+            exp['count_esperienza'] = 0;
+            experiencesCount.forEach( count => {
+                if(exp.id_esperienza == count.id_esperienza){
+                    exp['count_esperienza'] = count.count_esperienza;
+                }
             })
-            esperienzeCount[i].gallery = rows_gallery
-            
-        }
+        })
+
+
+        //AGGIUNTA GALLERY ESPERIENZA
+        experiences.forEach( exp => {  
+            exp.img = service.server+exp.img; //Immagine utente
+            exp.foto_copertina = service.server+exp.foto_copertina //immagine copertina
+            exp['gallery'] = [];
+            galleryComplete.forEach( gallery => {
+                if(exp.id_esperienza == gallery.id_esperienza){
+                   // console.log("*** GALLERY ", exp.gallery);
+                    exp.gallery.push(service.server+gallery.path); //immagine gallery
+                }
+            })
+        })
+
+       //ordinamento in base alla data di creazione (dall'esperienza più recente alla meno recente)
+        experiences.sort( function(a, b) {
+            return b.data_creazione - a.data_creazione
+        })
+        
+
         
         res.status(201).json({
-            esperienze : esperienzeCount
+            esperienze : experiences
         })
             
     }

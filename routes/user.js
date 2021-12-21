@@ -26,5 +26,6 @@ router.post('/updateMyProfile',
             userController.updateMyProfile); //Aggiornamento del profilo utente
 
 
+router.post('/forgottenPassword', userController.forgottenPassword); //procedura di password dimendicata
 
 module.exports = router;

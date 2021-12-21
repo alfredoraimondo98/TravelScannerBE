@@ -4,7 +4,8 @@ const {format} = require('date-format-parse')
 const { validationResult } = require('express-validator');
 const query = require('../utils/queries')
 const service = require('../utils/service');
-
+var randomstring = require("randomstring");
+const transporter = require('../utils/mail');
 
 /**
  * Restituisce le foto degli ultimi utenti registrati
@@ -251,4 +252,108 @@ exports.updateMyProfile = async (req, res, next) =>{
     finally{
         await connection.release(); //rilascia la connessione al termine delle operazioni 
     }
+}
+
+
+
+
+
+/**
+ * procedura di password dimendicata che prevede la generazione di una password random di 8 caratteri
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * @returns 
+ */
+ exports.forgottenPassword = async (req, res, next) => {
+
+    var email = req.body.email;
+   // console.log("*** email ", email);
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    await connection.beginTransaction(async function (err) { //avvia una nuova transazione
+        if (err) { throw err; }
+    });
+
+
+    try {
+        const [rows, field] = await connection.query(query.getUserByEmail, [email]); //recupera utente con la mail indicata, se presente
+        if(rows[0] == undefined){
+            return res.status(401).json({
+                mess : 'email non corretta'
+            })
+        }
+        var idUtente = rows[0].id_utente;
+
+        var newRandomPassword;
+        alphanumericRegexPassword = new RegExp('^(?=.*[0-9])(?=.*[a-zA-Z])([a-zA-Z0-9]+){8,255}');
+        do{
+            //genera una password di 8 caratteri
+            newRandomPassword = randomstring.generate({
+                length: 8,
+                charset: 'alphanumeric'
+            }); 
+           
+        }while(!alphanumericRegexPassword.test(newRandomPassword)) //finchè la password non corrisponde all'espressione regolare, genera una nuova password 
+       
+
+        var password = await bcrypt.hash(newRandomPassword, 12); //cripta la password temporanea da inserire nel db
+
+        const [rowsUpdate, fieldUpdate] = await connection.query(query.updateMyPassword, [password, idUtente]); //aggiorna la nuova password nel db
+         
+        
+        sendMailForgottenPassword("alfredoraimondo98@gmail.com", email, newRandomPassword); //invia la mail in chiaro all'utente
+       
+
+        await connection.commit(); //effettua il commit delle transazioni
+
+        res.status(201).json({
+            mess : 'Ok'
+        })
+        
+    }
+    catch(err){ //se si verifica un errore 
+       console.log("err " , err)
+        connection.rollback(); //effettua il rollback delle modifiche apportate
+
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
+}
+
+
+
+/**
+ * invio email con nuova password in seguito a un "password dimendicata"
+ * @param {*} destinatario 
+ * @param {*} messaggio 
+ */
+function sendMailForgottenPassword(destinatario, email, newPassword){
+    var mailOptions = {
+        from: 'alfredoraimondo98@gmail.com', //mittente
+        to: destinatario, //destinatario
+        subject: 'Travel Scanner: recupero credenziali',
+        //text: 'Sgart.it' // invia il corpo in plaintext
+        html: `<b><h3> Travel Scanner: recupero credenziali</h3></b><br>
+                <br> email: ${email}   <br>
+                <br> password: ${newPassword}   <br><br>
+                <br> Ora puoi utilizzare queste credenziali per accedere al nostro sito. Non dimenticare di aggiornare la password dal tuo profilo   <br>
+                <br><br>
+                
+               ` // invia il corpo in html 
+        };
+      
+      // invio il messaggio
+      transporter.sendMail(mailOptions, function(error, info){
+        if(error) {
+          console.log(error);
+        }else{
+          console.log('Messaggio inviato: ' + info.response);
+        }
+      });
 }

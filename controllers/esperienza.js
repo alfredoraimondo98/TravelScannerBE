@@ -4,6 +4,7 @@ const {format} = require('date-format-parse')
 const { validationResult } = require('express-validator');
 const query = require('../utils/queries')
 const service = require('../utils/service');
+const queries = require('../utils/queries');
 
 
 exports.createEsperienza = async (req, res, next)=>{
@@ -703,4 +704,87 @@ exports.getVotoEffettuatoAccesibilita = async(req,res,next)=>{
     finally{
         await connection.release(); //rilascia la connessione al termine delle operazioni 
     }    
+}
+
+exports.updateEsperienza = async(req,res,next)=>{
+    var idEsperienza= req.body.idEsperienza;
+    var descrizione=req.body.descrizione;
+    var accessibilita= req.body.accessibilita
+    var fotoCopertina=req.files[0].path.slice(6)
+    var fotoGallery=[]
+    
+
+    for(var i=1; i<req.files.length;i++){
+        fotoGallery.push(req.files[i].path.slice(6))
+    }
+    
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    await connection.beginTransaction(async function (err) { //avvia una nuova transazione
+        if (err) { throw err; }
+    });
+
+    try {
+        
+        if(descrizione!=null)
+        {
+
+            await connection.query(queries.updateDescrizione,[descrizione,idEsperienza])
+            
+
+            
+        }
+
+        if(accessibilita!=null)
+        {
+            await connection.query(queries.updateAccessibilita,[accessibilita,idEsperienza])
+            
+
+            res.status(201).json({
+                mess: "ok acc"
+            })
+        }
+        
+        if(fotoCopertina!=null)
+        {
+            await connection.query(queries.updateFotoCopertina,[fotoCopertina,idEsperienza])
+            
+
+           
+        }
+
+        if(fotoGallery != []){
+            const [rows_gallery,field_gallery]= await connection.query(query.getGallery,[idEsperienza])
+            
+            idGallery= rows_gallery[0].id_gallery;
+            console.log(idGallery)
+
+            for(var i=1; i<fotoGallery.length; i++){
+                console.log(fotoGallery[i])
+                await connection.query(query.insertFoto,[fotoGallery[i],idGallery])
+            }
+
+        }
+
+        else{
+            const [rows_gallery,field_gallery]= await connection.query(query.getGallery,[idEsperienza])
+            idGallery= rows_gallery[0].id_gallery;
+            await connection.query(query.insertFoto,[undefined,idGallery])
+        }
+    
+        
+        
+        await connection.commit();
+        
+        
+    } catch (error) {;
+
+        res.status(401).json({
+            mess : error
+        })
+    }
+
+
+
 }

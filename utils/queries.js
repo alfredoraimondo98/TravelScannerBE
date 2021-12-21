@@ -3,6 +3,7 @@ module.exports = {
     getUserByEmail: "SELECT * FROM utente WHERE email = ?",
     getUserById : "SELECT * FROM utente WHERE id_utente = ?",
     getAllLuoghi : "SELECT * FROM luogo",
+    getGallery: "SELECT id_gallery FROM gallery WHERE id_esperienza = ?",
 
     getAllPlacesWithOptionalField : `SELECT luogo.id_luogo, luogo.titolo, luogo.citta, luogo.nazione, luogo.posizione, esperienza.foto_copertina, esperienza.count_foto_copertina, 
                                             orari_di_apertura.orario_apertura, orari_di_apertura.orario_chiusura, costo.costo_minimo, costo.costo_massimo
@@ -208,7 +209,9 @@ module.exports = {
     updateVoto: "UPDATE voto SET voto = ? WHERE id_esperienza = ? AND id_utente = ? AND tipo_voto = ?",
     updateImgUser : "UPDATE utente SET img = ? WHERE id_utente = ?", //aggiorna l'immagine dell'utente  //aggiorna il voto della descrizione in voto in caso in cui un utente volesse rivotare
 
-
+    updateDescrizione: "UPDATE esperienza SET descrizione = ? WHERE id_esperienza = ?",
+    updateAccessibilita: "UPDATE esperienza SET accessibilita = ? WHERE id_esperienza = ?",
+    updateFotoCopertina: "UPDATE esperienza SET foto_copertina = ? WHERE id_esperienza = ?",
 
 
     updateMyName: "UPDATE utente SET nome = ? WHERE id_utente = ?",

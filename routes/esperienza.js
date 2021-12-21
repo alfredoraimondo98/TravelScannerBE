@@ -28,4 +28,8 @@ router.post('/getVotoEffettuatoFotoCopertina', esperienzaController.getVotoEffet
 router.post('/getVotoEffettuatoAccessibilita', esperienzaController.getVotoEffettuatoAccesibilita)
 router.post('/getVotoEffettuatoGallery', esperienzaController.getVotoEffettuatoFotoGallery)
 
+router.post('/updateEsperienza',upload.array('fotoGallery',10),
+[
+
+], esperienzaController.updateEsperienza)
 module.exports= router

@@ -26,15 +26,17 @@ exports.register = async (req, res, next) => {
     var cognome = req.body.cognome;
     var email = req.body.email;
     var password = await bcrypt.hash(req.body.password, 12); //cripta password
-    var dataDiNascita = req.body.data_di_nascita;
+    var dataDiNascita = '0000-00-00'//req.body.data_di_nascita;
     var badge = "tipo gamification"; //badge che rappresenta la tipologia di utente (da definire)
-    var img = '/images/logo.jpg' //immagine profilo utente (default)
-
-    /*
+    var img; 
+    
     if(req.file){ //Se presente la foto
-        img = req.file.path.slice(6); //recupera path relativo dell'img (in req.file) 
+        img = req.file.path.slice(6); //recupera path relativo dell'img (in req.file)
+        img = img.replace(/\\/g, "/"); 
     }
-    */
+    else{
+        img = '/images/logo.jpg' //immagine profilo utente (default)
+    }
 
     if(await verifyMail(email)){ //se la mail è già presente viene restituito TRUE e non si può procedere alla registrazione
         res.status(401).json({

@@ -429,4 +429,39 @@ exports.getPlace = async (req, res, next) => {
 
 }
 
+exports.searchPlace = async(req,res,next) =>{
+    tipo= req.body.tipo;
+    luogo_ricercato= req.body.luogo_ricercato
+    luogo_ricercato=luogo_ricercato+'%'
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+ 
+    await connection.beginTransaction(async function (err) { //avvia una nuova transazione
+        if (err) { throw err; }
+    });
+
+    try{
+        const [rows_place, field_place] = await connection.query(query.getPlaceByTitle,[luogo_ricercato]);
+
+        if(rows_place[0]==undefined){
+            res.status(201).json({
+                mess: "Nessun luogo trovato!!"
+            })
+        }
+        else{
+            res.status(201).json({
+                places : rows_place
+            })
+        }
+        
+    }catch(error){
+        res.status(401).json({
+            mess: error
+        })
+    }
+
+
+}
+
 

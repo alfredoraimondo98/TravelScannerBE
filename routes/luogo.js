@@ -18,7 +18,7 @@ router.post('/createPlace',
 
 router.get('/getRandomPlaces', luogoController.getRandomPlaces);; //Restituisce una lista di luoghi random da quelli presenti (5 luoghi)
 
-router.post('/getPlace', luogoController.getPlace); //recupera le info per il luogo con un determinato id
+router.post('/searchPlace', luogoController.searchPlace);//recupera le info per il luogo con un determinato id
 
 
 

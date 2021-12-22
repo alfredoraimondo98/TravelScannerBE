@@ -24,28 +24,28 @@ module.exports = {
                                         ORDER BY gallery.count_gallery DESC LIMIT 1 
                             )`,
 
-    getTopDescrizioneByLuogoWithUser : `SELECT esperienza.id_esperienza, descrizione, count_descrizione, esperienza.id_utente, 
+    getTopDescrizioneByLuogoWithUser : `SELECT esperienza.id_esperienza, descrizione, count_descrizione, creare_esperienza.id_utente, 
                                                         utente.nome, utente.cognome, utente.img, creare_esperienza.data_creazione 
                                                     FROM esperienza JOIN creare_esperienza JOIN utente
-                                                    ON esperienza.id_utente = creare_esperienza.id_utente
+                                                    ON esperienza.id_esperienza = creare_esperienza.id_esperienza
                                                         AND creare_esperienza.id_utente = utente.id_utente
                                                     WHERE id_luogo = ? 
                                                     ORDER BY count_descrizione DESC, creare_esperienza.data_creazione DESC LIMIT 1
                                                 `,
 
-    getTopFotoCopertinaByLuogoWithUser :`SELECT esperienza.id_esperienza, foto_copertina, count_foto_copertina, esperienza.id_utente, 
+    getTopFotoCopertinaByLuogoWithUser :`SELECT esperienza.id_esperienza, foto_copertina, count_foto_copertina, creare_esperienza.id_utente, 
                                             utente.nome, utente.cognome, utente.img, creare_esperienza.data_creazione 
                                         FROM esperienza JOIN creare_esperienza JOIN utente
-                                        ON esperienza.id_utente = creare_esperienza.id_utente
+                                        ON esperienza.id_esperienza = creare_esperienza.id_esperienza
                                             AND creare_esperienza.id_utente = utente.id_utente
                                         WHERE id_luogo = ? 
                                         ORDER BY count_descrizione DESC, creare_esperienza.data_creazione DESC LIMIT 1
                                         `, 
                                         
-    getTopAccessibilitaByLuogoWithUser : `SELECT esperienza.id_esperienza, accessibilita, count_accessibilita, esperienza.id_utente, 
+    getTopAccessibilitaByLuogoWithUser : `SELECT esperienza.id_esperienza, accessibilita, count_accessibilita, creare_esperienza.id_utente, 
                                             utente.nome, utente.cognome, utente.img, creare_esperienza.data_creazione 
                                         FROM esperienza JOIN creare_esperienza JOIN utente
-                                        ON esperienza.id_utente = creare_esperienza.id_utente
+                                        ON esperienza.id_esperienza = creare_esperienza.id_esperienza
                                             AND creare_esperienza.id_utente = utente.id_utente
                                         WHERE id_luogo = ? 
                                         ORDER BY count_accessibilita DESC, creare_esperienza.data_creazione DESC LIMIT 1
@@ -57,7 +57,7 @@ module.exports = {
                                     FROM foto JOIN gallery JOIN esperienza JOIN creare_esperienza JOIN utente
                                         ON foto.id_gallery = gallery.id_gallery 
                                         AND gallery.id_esperienza = esperienza.id_esperienza
-                                        AND esperienza.id_utente = creare_esperienza.id_utente
+                                        AND esperienza.id_esperienza = creare_esperienza.id_esperienza
                                         AND creare_esperienza.id_utente = utente.id_utente
                                                             WHERE foto.id_gallery = ( 
                                                                         SELECT id_gallery FROM gallery JOIN esperienza

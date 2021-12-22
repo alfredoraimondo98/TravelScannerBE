@@ -283,8 +283,14 @@ async function verifyLuogo(titolo){
  */
 exports.getPlace = async (req, res, next) => {
 
-    var idLuogo = req.body.id_luogo;
+    //Variabili per il risultato finale
+    var countFotoCopertina = 0;
+    var countGallery = 0;
+    var countAccessibilita = 0;
+    var countDescrizione = 0;
 
+    var idLuogo = req.body.id_luogo;
+    console.log("************ id luogo", idLuogo);
     const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
      
     try {
@@ -295,36 +301,89 @@ exports.getPlace = async (req, res, next) => {
 
         //***** DESCRIZIONE PIU VOTATA */
 
-        const [rows_descrizione, field_descrizione] = await connection.query(query.getTopDescrizioneByLuogoWithUser, [idLuogo]); //recupera la miglior descrizione
-        var descrizione = rows_descrizione[0];
+        const [rows_descrizione, field_descrizione] = await connection.query(query.getTopDescrizioneByLuogoWithUser, [idLuogo]);
+        var descrizione;
+        if(rows_descrizione[0]){//recupera la miglior descrizione
+            descrizione = rows_descrizione[0];
+            countDescrizione = descrizione.count_descrizione;
+        }
+        else{
+            descrizione = {};
+            descrizione.descrizione = '';
+        }
         console.log("*** descrizione più votata: ", rows_descrizione);
 
         const[rows_descVotoTot, field_descVotoTot]= await connection.query(query.getTotalDescrizione,[idLuogo]) //recupera totale voti
-        var count_total_descrizione = rows_descVotoTot[0].count_total;
+        var count_total_descrizione;
+        if(rows_descVotoTot[0]){
+            count_total_descrizione = rows_descVotoTot[0].count_total;
+        }
+        else{
+            count_total_descrizione = 0;
+        }
          
         
         //*** ACCESSIVILITA PIU VOTATA */
         const [rows_accessibilita, field_accessibilita] = await connection.query(query.getTopAccessibilitaByLuogoWithUser, [idLuogo]); //recupera la miglior accessibilita
-        var accessibilita = rows_accessibilita[0];
+        var accessibilita; 
+        if(rows_accessibilita[0]){
+            accessibilita = rows_accessibilita[0];
+            countAccessibilita = accessibilita.count_accessibilita;
+        }
+        else{ //se non è presente viene settato come null
+            accessibilita = {};
+            accessibilita.accessibilita = '';
+        }
         console.log("*** accessibilita più votata: ", accessibilita);
 
         const[rows_accVotoTot, field_accVotoTot]= await connection.query(query.getTotalAccessibilita,[idLuogo]) //recupera totale voti
-        var count_total_accessibilita = rows_accVotoTot[0].count_total;
+        var count_total_accessibilita;
+        if(rows_accVotoTot[0]){
+            count_total_accessibilita = rows_accVotoTot[0].count_total;
+        }
+        else{
+            count_total_accessibilita = 0;
+        }
 
 
         const [rows_fotoCopertina, field_fotoCopertina] = await connection.query(query.getTopFotoCopertinaByLuogoWithUser, [idLuogo]); //recupera la miglior fotoCopertina
-        var fotoCopertina = rows_fotoCopertina[0];
+        var fotoCopertina;
+        if(rows_fotoCopertina[0]){
+            var fotoCopertina = rows_fotoCopertina[0];
+            countFotoCopertina = fotoCopertina.count_foto_copertina;
+        }
+        else{
+            var fotoCopertina = {};
+            fotoCopertina.foto_copertina = '/images/default_place.jpeg'
+        }
         console.log("*** fotoCopertina più votata: ", fotoCopertina);
 
 
         const [rows_gallery, field_gallery] = await connection.query(query.getTopGalleryByLuogoWithUser, [idLuogo]); //recupera la miglior gallery (con le relative foto) per il luogo
-        var gallery = rows_gallery;
+        var gallery;
+        if(rows_gallery[0]){
+            gallery = rows_gallery;
+            countGallery = gallery[0].count_gallery;
+
+
+            var fotoGallery = [];
+            gallery.forEach(el => {
+                fotoGallery.push(service.server+el.path)
+            })
+        }
+        else{
+            gallery = [];
+            gallery.push({
+                id_utente : 0,
+                nome : '',
+                cognome : '',
+                img : 'images/logo.jpg',
+            })
+      
+        }
         console.log("** gallery ", gallery)
 
-        var fotoGallery = [];
-        gallery.forEach(el => {
-            fotoGallery.push(service.server+el.path)
-        })
+      
 
 
 
@@ -350,19 +409,21 @@ exports.getPlace = async (req, res, next) => {
  
         //Calcolo media voto utenti (voti like * 0.2 + voti star * 02 / numero totali di voti)
 
-        var like = (fotoCopertina.count_foto_copertina * 0.2) + (gallery[0].count_gallery * 0.2);
+        var like = (countFotoCopertina * 0.2) + (countGallery * 0.2);
         console.log("** like", like);
 
-        var star = (descrizione.count_descrizione * 0.2) + (accessibilita.count_accessibilita * 0.2);
+        var star = (countDescrizione * 0.2) + (countAccessibilita * 0.2);
         console.log("** star", star);
 
-        var total = fotoCopertina.count_foto_copertina + gallery[0].count_gallery + count_total_descrizione + count_total_accessibilita;
+        var total = countFotoCopertina + countGallery + count_total_descrizione + count_total_accessibilita;
         console.log("** total", total);
 
-        var mediaVotiUtenti = ((like + star) / total).toFixed(2) * 5;
+        var mediaVotiUtenti = 0;
+        if(total != 0){
+            mediaVotiUtenti = (((like + star) / total) * 5).toFixed(2);
+        }
         //console.log("** media", (fotoCopertina.count_foto_copertina * 0.2) + (gallery.count_gallery * 0.2) );
-         
-        
+     
 
         var placeDetails = {
             id_luogo : luogo.id_luogo,
@@ -407,7 +468,8 @@ exports.getPlace = async (req, res, next) => {
             ambassador_gallery_cognome : gallery[0].cognome,
             ambassador_gallery : service.server+gallery[0].img,
 
-            media_voti_utenti : mediaVotiUtenti
+            voto_luogo : +mediaVotiUtenti,
+            numero_votazioni : total
 
         }
 

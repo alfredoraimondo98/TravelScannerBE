@@ -117,7 +117,6 @@ exports.login = async (req, res, next) => {
             })
         }
         
-        
 
         res.status(201).json({ 
             id_utente : loginUser.id_utente,

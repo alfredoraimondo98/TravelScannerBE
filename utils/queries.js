@@ -2,6 +2,8 @@ module.exports = {
 
     getUserByEmail: "SELECT * FROM utente WHERE email = ?",
     getUserById : "SELECT * FROM utente WHERE id_utente = ?",
+    getUserByNameSurname: "SELECT * FROM utente WHERE nome LIKE ? OR cognome LIKE ?",
+    getPlaceByTitle: "SELECT * from luogo WHERE titolo LIKE ? ",
     getAllLuoghi : "SELECT * FROM luogo",
     getGallery: "SELECT id_gallery FROM gallery WHERE id_esperienza = ?",
 

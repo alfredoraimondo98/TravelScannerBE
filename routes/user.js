@@ -27,5 +27,6 @@ router.post('/updateMyProfile',
 
 
 router.post('/forgottenPassword', userController.forgottenPassword); //procedura di password dimendicata
-
+router.post('/searchUser',userController.searchUser)
+router.post('/searchAll',userController.serchAll)
 module.exports = router;

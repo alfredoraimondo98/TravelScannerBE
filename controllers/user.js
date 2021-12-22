@@ -1,11 +1,12 @@
 const database = require('../utils/database');
 const bcrypt = require('bcryptjs');
 const {format} = require('date-format-parse')
-const { validationResult } = require('express-validator');
+const { validationResult, body } = require('express-validator');
 const query = require('../utils/queries')
 const service = require('../utils/service');
 var randomstring = require("randomstring");
 const transporter = require('../utils/mail');
+const { param } = require('../routes/user');
 
 /**
  * Restituisce le foto degli ultimi utenti registrati
@@ -356,4 +357,87 @@ function sendMailForgottenPassword(destinatario, email, newPassword){
           console.log('Messaggio inviato: ' + info.response);
         }
       });
+}
+
+exports.searchUser = async(req,res,next) =>{
+    tipo= req.body.tipo;
+    utente_ricercato= req.body.utente_ricercato
+    utente_ricercato=utente_ricercato+'%'
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+ 
+    await connection.beginTransaction(async function (err) { //avvia una nuova transazione
+        if (err) { throw err; }
+    });
+
+    try{
+        const [rows_user, field_user] = await connection.query(query.getUserByNameSurname,[utente_ricercato,utente_ricercato]);
+        
+        if(rows_user[0]==undefined){
+            res.status(201).json({
+                mess: "Nessun utente trovato!!"
+            })
+        }
+        else{
+            res.status(201).json({
+                utenti : rows_user
+            })
+        }
+        
+    }catch(error){
+        res.status(401).json({
+            mess: error
+        })
+    }
+
+
+}
+
+exports.serchAll = async(req,res,next) => {
+    parametro_ricerca=req.body.parametro_ricerca+"%";
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+ 
+    await connection.beginTransaction(async function (err) { //avvia una nuova transazione
+        if (err) { throw err; }
+    });
+
+    try {
+
+        const [rows_user, field_user] = await connection.query(query.getUserByNameSurname,[parametro_ricerca,parametro_ricerca]);
+
+        const [rows_place, field_place] = await connection.query(query.getPlaceByTitle,[parametro_ricerca]);
+        
+        
+        bodyRes={}
+        
+
+        if(rows_user[0]!=undefined){
+            bodyRes.user=rows_user
+        }
+        else{
+            bodyRes.user="Nessun utente torvato"
+        }
+        
+        if(rows_place[0]!=undefined){
+            bodyRes.place=rows_place
+        }
+        else{
+            bodyRes.place="Nessun luogo trovato"
+        }
+    
+        res.status(201).json(bodyRes)
+        
+    } catch (error) {
+        res.status(401).json({
+            mess : "Nussun elemento trovato!!"
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
+
+
 }

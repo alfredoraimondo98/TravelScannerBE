@@ -210,7 +210,7 @@ module.exports = {
     createGallery : "INSERT INTO gallery(count_gallery, id_esperienza) VALUES (?, ?)",
     insertFoto : "INSERT INTO foto(path, id_gallery) VALUES (?, ?)",
     insertAmbassador : "INSERT INTO ambassador(id_utente, id_luogo, tipo_ambassador, count_voto) VALUES (?, ?, ?, ?)",
-
+    deleteAmbassador: "DELETE FROM ambassador WHERE id_utente = ? AND id_luogo = ? AND tipo_ambassador = ?",
     verifyMail : "SELECT email FROM utente WHERE email = ?",
     verifyLuogo : "SELECT titolo FROM luogo WHERE titolo = ?",
     verifyVoto : "SELECT voto FROM voto WHERE id_utente = ? AND id_esperienza = ?",

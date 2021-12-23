@@ -31,10 +31,10 @@ exports.createEsperienza = async (req, res, next)=>{
     var countFotoCopertina=0  
     var dataCreazione = format(new Date(), 'YYYY-MM-DD');
     var fotos=[]
-    console.log("ciao")
     
     for(var i=0; i<req.files.length; i++){
-        fotos.push(req.files[i].path.slice(6))
+        img=req.files[i].path.slice(6)
+        fotos.push(img.replace(/\\/g, "/"))
     }
 
     var fotoCopertina=fotos[0]
@@ -175,7 +175,13 @@ exports.votaFotoCopertina = async (req, res, next)=>{
         var luogo = rows_luogo[0];
 
         const [rows_ambVoto, field_ambVoto] = await connection.query(query.getCountVotoAmbassadorByLuogo, [luogo.id_luogo, 'fotoCopertina']);
+        const [rows_topCopertina, field_topCopertina] = await connection.query(query.getTopFotoCopertinaByLuogoWithUser, [luogo.id_luogo]);
+        var idTopCopertina = rows_topCopertina[0].id_utente; 
 
+        if(idUtenteVotato==idTopCopertina)
+        {
+            await connection.query(query.updateAmbassador, [idUtenteVotato, votoMyFotoCopertina, luogo.id_luogo, 'fotoCopertina']); //incremento il voto dell'ambassador
+        }
         //confronto voto con l'ambassador 
         if(votoMyFotoCopertina > rows_ambVoto[0].count_voto){
             await connection.query(query.updateAmbassador, [idUtenteVotato, votoMyFotoCopertina, luogo.id_luogo, 'fotoCopertina']); //l'utente appena votato diventa ambassador
@@ -207,13 +213,21 @@ exports.votaFotoCopertina = async (req, res, next)=>{
             const [rows_ambVoto, field_ambVoto] = await connection.query(query.getCountVotoAmbassadorByLuogo, [luogo.id_luogo, 'fotoCopertina']);
 
             const [rows_topCopertina, field_topCopertina] = await connection.query(query.getTopFotoCopertinaByLuogoWithUser, [luogo.id_luogo]);
-            var topCopertina = rows_topCopertina[0]; 
+            var idTopCopertina = rows_topCopertina[0].id_utente; 
+            var votoTopCopertina =rows_topCopertina[0].count_foto_copertina;
 
-            //confronto voto con l'ambassador 
-            if(votoMyFotoCopertina > rows_ambVoto[0].count_voto){
-                await connection.query(query.updateAmbassador, [idUtenteVotato, votoMyFotoCopertina, luogo.id_luogo, 'fotoCopertina']); //l'utente appena votato diventa ambassador
-                await connection.query(query.updateCountAmbassadorByUser, [1, idUtenteVotato]); //aggiornamento count ambassador in 'utente'
+            //confronto tra l'utente che ha la foto copertina con più mi piace e l'utente a cui si è tolto il voto
+            if(idTopCopertina!=idUtenteVotato){
+                await connection.query(query.updateAmbassador, [idTopCopertina, votoTopCopertina , luogo.id_luogo, 'fotoCopertina']); //l'utente appena votato diventa ambassador
+                await connection.query(query.updateCountAmbassadorByUser, [1, idTopCopertina]);
+                
             }
+            else{
+                await connection.query(query.updateAmbassador, [idTopCopertina, votoMyFotoCopertina, luogo.id_luogo, 'fotoCopertina']); //l'utente appena votato diventa ambassador 
+            }
+    
+
+            await connection.commit();
 
            
             res.status(201).json({
@@ -237,8 +251,8 @@ exports.votaFotoCopertina = async (req, res, next)=>{
 
 exports.votaFotoGallery = async (req, res, next)=>{
     //console.log("ueueu")
-    var idEsperienza= req.body.idEsperienza
-    var idUtente= req.body.idUtente
+    var idEsperienza= req.body.id_esperienza
+    var idUtente= req.body.id_utente
     
     
     const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
@@ -257,6 +271,33 @@ exports.votaFotoGallery = async (req, res, next)=>{
         const [rows_votoFotoGallery, field_votoFotoGallery] = await connection.query(query.getNumVotiFotoGallery, [idEsperienza]);
 
         await connection.query(query.updateNumVotiFotoGallery,[rows_votoFotoGallery[0].count_gallery+1,idEsperienza])
+
+        const [rows_utenteDaVotare, field_utenteDaVotare] = await connection.query(query.getUserByIdEsperienza, [idEsperienza]);
+        var idUtenteVotato = rows_utenteDaVotare[0].id_utente; //id dell'utente che riceve il voto
+
+        //aggiornamento ambassador
+        
+        var votoMyFotoGallery = rows_votoFotoGallery[0].count_gallery + 1; 
+        
+        const [rows_luogo, field_luogo] = await connection.query(query.getLuogoByIdEsperienza, [idEsperienza]); //recupera il luogo dell'esperienza che si sta votando
+        var luogo = rows_luogo[0];
+
+        const [rows_ambVoto, field_ambVoto] = await connection.query(query.getCountVotoAmbassadorByLuogo, [luogo.id_luogo, 'fotoGallery']);
+        const [rows_topGallery, field_topGallery] = await connection.query(query.getTopGalleryByLuogo, [luogo.id_luogo]);
+        
+        const [rows_idTopGallery, field_idTopGallery] = await connection.query(query.getUserByIdEsperienza, [rows_topGallery[0].id_esperienza]); //prende l'id dell'utente della gallery che si sta votando
+        
+        idTopGallery=rows_idTopGallery[0].id_utente
+
+        if(idUtenteVotato==idTopGallery) //incrementa il voto della fotoGallery del più votato
+        {
+            await connection.query(query.updateAmbassador, [idUtenteVotato, votoMyFotoGallery, luogo.id_luogo, 'fotoGallery']); //incremento il voto dell'ambassador
+        }
+        //confronto voto con l'ambassador 
+        if(votoMyFotoGallery > rows_ambVoto[0].count_voto){
+            await connection.query(query.updateAmbassador, [idUtenteVotato, votoMyFotoGallery, luogo.id_luogo, 'fotoGallery']); //l'utente appena votato diventa ambassador
+            await connection.query(query.updateCountAmbassadorByUser, [1, idUtenteVotato]); //aggiornamento count ambassador in 'utente'
+        }
         
         await connection.commit(); //effettua il commit delle transazioni
     
@@ -266,11 +307,45 @@ exports.votaFotoGallery = async (req, res, next)=>{
     }
         else
         {
-           
-            res.status(201).json({
-                mess : 'già votato'
-            })
+            const [rows_voto, field_voto] = await connection.query(query.deleteVoto, [idUtente,idEsperienza, "fotoGallery"]);
+            const [rows_votoFotoGallery, field_votoFotoGallery] = await connection.query(query.getNumVotiFotoGallery, [idEsperienza]);
+            await connection.query(query.updateNumVotiFotoGallery,[rows_votoFotoGallery[0].count_gallery - 1, idEsperienza])
+
+            const [rows_utenteDaVotare, field_utenteDaVotare] = await connection.query(query.getUserByIdEsperienza, [idEsperienza]);
+            var idUtenteVotato = rows_utenteDaVotare[0].id_utente; //id dell'utente che riceve il voto
+    
+            //aggiornamento ambassador
+            
+            var votoMyFotoGallery = rows_votoFotoGallery[0].count_gallery - 1; 
+            
+            const [rows_luogo, field_luogo] = await connection.query(query.getLuogoByIdEsperienza, [idEsperienza]); //recupera il luogo dell'esperienza che si sta votando
+            var luogo = rows_luogo[0];
+    
+            const [rows_ambVoto, field_ambVoto] = await connection.query(query.getCountVotoAmbassadorByLuogo, [luogo.id_luogo, 'fotoGallery']);
+            const [rows_topGallery, field_topGallery] = await connection.query(query.getTopGalleryByLuogo, [luogo.id_luogo]);
+            
+            const [rows_idTopGallery, field_idTopGallery] = await connection.query(query.getUserByIdEsperienza, [rows_topGallery[0].id_esperienza]); //prende l'id dell'utente della gallery che si sta votando
+            
+            var idTopGallery=rows_idTopGallery[0].id_utente
+            var votoTopFotoGallery=rows_topGallery[0].count_gallery
+
+            console.log(votoTopFotoGallery)
+    
+            if(idTopGallery!=idUtenteVotato){
+                await connection.query(query.updateAmbassador, [idTopGallery, votoTopFotoGallery , luogo.id_luogo, 'fotoGallery']); //l'utente appena votato diventa ambassador
+                await connection.query(query.updateCountAmbassadorByUser, [1, idTopCopertina]);
+                
+            }
+            else{
+                await connection.query(query.updateAmbassador, [idTopGallery, votoTopFotoGallery, luogo.id_luogo, 'fotoGallery']); //l'utente appena votato diventa ambassador 
+            }
+            
+            await connection.commit();
         }   
+
+        res.status(201).json({
+            mess: "voto eliminato"
+        })
         
     }
     catch(err){ //se si verifica un errore 
@@ -300,13 +375,45 @@ exports.votaDescrizione = async (req, res, next)=>{
     try{
         const [rows_verify, field_verify]= await connection.query(query.verifyVotoTipo,[idUtente, idEsperienza,"descrizione"])
         if(rows_verify[0]==undefined){
+            //BLOCCO VOTAZIONE
             await connection.query(query.insertVoto,[idUtente,idEsperienza,votoDescrizione,"descrizione"])
-
             const[rows_votoTot, field_votoTot]= await connection.query(query.getTotVotieSomma,[idEsperienza,"descrizione"])
-            sommaVoti=rows_votoTot.sommaVoti
-            var mediaVoti=sommaVoti/rows_votoTot[0].countVoti
 
+            sommaVoti=rows_votoTot[0].sommaVoti
+            
+            var mediaVoti=sommaVoti/rows_votoTot[0].countVoti
             await connection.query(query.updateVotoDescrizione,[mediaVoti,sommaVoti,idEsperienza])
+            //FINE BLOCCO DI VOTAZIONE
+
+            //BLOCCO DI AMBASSADOR
+            
+            const [rows_utenteDaVotare, field_utenteDaVotare] = await connection.query(query.getUserByIdEsperienza, [idEsperienza]);
+            var idUtenteVotato = rows_utenteDaVotare[0].id_utente; //id dell'utente che riceve il voto
+            var votoMyDescrizione = mediaVoti; 
+        
+            const [rows_luogo, field_luogo] = await connection.query(query.getLuogoByIdEsperienza, [idEsperienza]); //recupera il luogo dell'esperienza che si sta votando
+            var luogo = rows_luogo[0];
+
+            const [rows_ambVoto, field_ambVoto] = await connection.query(query.getCountVotoAmbassadorByLuogo, [luogo.id_luogo, 'descrizione']);
+
+            const [rows_topDescrizione, field_topDescrizione] = await connection.query(query.getTopDescrizioneByLuogoWithUser, [luogo.id_luogo]);
+            var idTopDescrizione=rows_topDescrizione[0].id_utente
+            var votoTopDescrizione= rows_topDescrizione[0].count_descrizione
+            
+            
+            if(idTopDescrizione!=idUtenteVotato){
+                await connection.query(query.updateAmbassador, [idTopDescrizione, votoTopDescrizione , luogo.id_luogo, 'descrizione']); //l'utente appena votato diventa ambassador
+                await connection.query(query.updateCountAmbassadorByUser, [1, idTopDescrizione]);
+                
+            }
+            else{
+                await connection.query(query.updateAmbassador, [idTopDescrizione, votoTopDescrizione, luogo.id_luogo, 'descrizione']); //l'utente appena votato diventa ambassador 
+            }
+
+            //FINE BLOCCO DI AMBASSADOR
+
+
+
             
 
             
@@ -318,15 +425,44 @@ exports.votaDescrizione = async (req, res, next)=>{
         }
         else{
             
+            //BLOCCO VOTAZIONE
             await connection.query(query.updateVoto,[votoDescrizione,idEsperienza,idUtente,"descrizione"])
-
             const[rows_votoTot, field_votoTot]= await connection.query(query.getTotVotieSomma,[idEsperienza,"descrizione"])
-
-            sommaVoti=rows_votoTot.sommaVoti
-
+            sommaVoti=rows_votoTot[0].sommaVoti
             var mediaVoti=sommaVoti/rows_votoTot[0].countVoti
             await connection.query(query.updateVotoDescrizione,[mediaVoti,sommaVoti,idEsperienza])
+            //FINE BLOCCO DI VOTAZIONE
 
+            const [rows_utenteDaVotare, field_utenteDaVotare] = await connection.query(query.getUserByIdEsperienza, [idEsperienza]);
+            var idUtenteVotato = rows_utenteDaVotare[0].id_utente; //id dell'utente che riceve il voto
+            var votoMyDescrizione = mediaVoti; 
+        
+            const [rows_luogo, field_luogo] = await connection.query(query.getLuogoByIdEsperienza, [idEsperienza]); //recupera il luogo dell'esperienza che si sta votando
+            var luogo = rows_luogo[0];
+
+            const [rows_ambVoto, field_ambVoto] = await connection.query(query.getCountVotoAmbassadorByLuogo, [luogo.id_luogo, 'descrizione']);
+
+            const [rows_topDescrizione, field_topDescrizione] = await connection.query(query.getTopDescrizioneByLuogoWithUser, [luogo.id_luogo]);
+            var idTopDescrizione=rows_topDescrizione[0].id_utente
+            var votoTopDescrizione= rows_topDescrizione[0].count_descrizione
+            
+            
+            if(idTopDescrizione!=idUtenteVotato){
+                await connection.query(query.updateAmbassador, [idTopDescrizione, votoTopDescrizione , luogo.id_luogo, 'descrizione']); //l'utente appena votato diventa ambassador
+                await connection.query(query.updateCountAmbassadorByUser, [1, idTopDescrizione]);
+                
+            }
+            else{
+                console.log(mediaVoti)
+                await connection.query(query.updateAmbassador, [idTopDescrizione, mediaVoti, luogo.id_luogo, 'descrizione']); //l'utente appena votato diventa ambassador 
+            }
+
+
+            //BLOCCO AMBASSADOR
+
+
+
+            //FINE BLOCCO AMBASSADOR
             await connection.commit();
             res.status(201).json({
                 mess : 'voto aggiornato'
@@ -362,14 +498,40 @@ exports.votaAccessibilita = async (req, res, next)=>{
     try{
         const [rows_verify, field_verify]= await connection.query(query.verifyVotoTipo,[idUtente, idEsperienza,"accessibilita"])
         if(rows_verify[0]==undefined){
-            await connection.query(query.insertVoto,[idUtente,idEsperienza,votoAccessibilita,"accessibilita"])
 
+            //BLOCCO VOTAZIONE
+            await connection.query(query.insertVoto,[idUtente,idEsperienza,votoAccessibilita,"accessibilita"])
             const[rows_votoTot, field_votoTot]= await connection.query(query.getTotVotieSomma,[idEsperienza,"accessibilita"])
             var sommaVoti=rows_votoTot[0].sommaVoti
             var mediaVoti=sommaVoti/rows_votoTot[0].countVoti
-
             await connection.query(query.updateVotoAccessibilita,[mediaVoti,sommaVoti,idEsperienza])
+            //FINE BLOCCO VOTAZIONE
+
+            //BLOCCO AMBASSADOR
+            const [rows_utenteDaVotare, field_utenteDaVotare] = await connection.query(query.getUserByIdEsperienza, [idEsperienza]);
+            var idUtenteVotato = rows_utenteDaVotare[0].id_utente; //id dell'utente che riceve il voto
+            var votoMyAccessibilita = mediaVoti; 
+        
+            const [rows_luogo, field_luogo] = await connection.query(query.getLuogoByIdEsperienza, [idEsperienza]); //recupera il luogo dell'esperienza che si sta votando
+            var luogo = rows_luogo[0];
+
+            const [rows_ambVoto, field_ambVoto] = await connection.query(query.getCountVotoAmbassadorByLuogo, [luogo.id_luogo, 'accessibilita']);
+
+            const [rows_topAccessibilita, field_topAccessibilita] = await connection.query(query.getTopAccessibilitaByLuogoWithUser, [luogo.id_luogo]);
+            var idTopAccessibilita=rows_topAccessibilita[0].id_utente
+            var votoTopAccessibilita= rows_topAccessibilita[0].count_accessibilita
+
             
+            if(idTopAccessibilita!=idUtenteVotato){
+                await connection.query(query.updateAmbassador, [idTopAccessibilita, votoTopAccessibilita , luogo.id_luogo, 'accessibilita']); //l'utente appena votato diventa ambassador
+                await connection.query(query.updateCountAmbassadorByUser, [1, idTopAccessibilita]);
+                
+            }
+            else{
+                await connection.query(query.updateAmbassador, [idTopAccessibilita, mediaVoti, luogo.id_luogo, 'accessibilita']); //l'utente appena votato diventa ambassador 
+            }
+
+            //FINE BLOCCO AMBASSADOR
 
             
             await connection.commit(); //effettua il commit delle transazioni
@@ -381,11 +543,39 @@ exports.votaAccessibilita = async (req, res, next)=>{
         else{
             
             await connection.query(query.updateVoto,[votoAccessibilita,idEsperienza,idUtente,"accessibilita"])
-            
             const[rows_votoTot, field_votoTot]= await connection.query(query.getTotVotieSomma,[idEsperienza,"accessibilita"])
             var sommaVoti=rows_votoTot[0].sommaVoti
             var mediaVoti=sommaVoti/rows_votoTot[0].countVoti
+            
             await connection.query(query.updateVotoAccessibilita,[mediaVoti,sommaVoti,idEsperienza])
+
+            //BLOCCO AMBASSADOR
+            const [rows_utenteDaVotare, field_utenteDaVotare] = await connection.query(query.getUserByIdEsperienza, [idEsperienza]);
+            var idUtenteVotato = rows_utenteDaVotare[0].id_utente; //id dell'utente che riceve il voto
+            var votoMyAccessibilita = mediaVoti; 
+            console.log(votoMyAccessibilita)
+        
+            const [rows_luogo, field_luogo] = await connection.query(query.getLuogoByIdEsperienza, [idEsperienza]); //recupera il luogo dell'esperienza che si sta votando
+            var luogo = rows_luogo[0];
+
+            const [rows_ambVoto, field_ambVoto] = await connection.query(query.getCountVotoAmbassadorByLuogo, [luogo.id_luogo, 'accessibilita']);
+
+            const [rows_topAccessibilita, field_topAccessibilita] = await connection.query(query.getTopAccessibilitaByLuogoWithUser, [luogo.id_luogo]);
+            var idTopAccessibilita=rows_topAccessibilita[0].id_utente
+            var votoTopAccessibilita= rows_topAccessibilita[0].count_accessibilita
+
+            
+            if(idTopAccessibilita!=idUtenteVotato){
+                await connection.query(query.updateAmbassador, [idTopAccessibilita, votoTopAccessibilita , luogo.id_luogo, 'accessibilita']); //l'utente appena votato diventa ambassador
+                await connection.query(query.updateCountAmbassadorByUser, [1, idTopAccessibilita]);
+                
+            }
+            else{
+                await connection.query(query.updateAmbassador, [idTopAccessibilita, mediaVoti, luogo.id_luogo, 'accessibilita']); //l'utente appena votato diventa ambassador 
+            }
+             
+
+            //FINE BLOCCO AMBASSADOR
 
             await connection.commit();
             res.status(201).json({
@@ -486,9 +676,6 @@ exports.votaAccessibilita = async (req, res, next)=>{
     }
 
 }
-
-
-
 
 
 /**
@@ -759,7 +946,8 @@ exports.updateEsperienza = async(req,res,next)=>{
     
 
     for(var i=1; i<req.files.length;i++){
-        fotoGallery.push(req.files[i].path.slice(6))
+        img=req.files[i].path.slice(6)
+        fotoGallery.push(img.replace(/\\/g, "/"))
     }
     
 
@@ -793,9 +981,7 @@ exports.updateEsperienza = async(req,res,next)=>{
         if(fotoCopertina!=null)
         {
             await connection.query(queries.updateFotoCopertina,[fotoCopertina,idEsperienza])
-            
-
-           
+              
         }
 
         if(fotoGallery != []){

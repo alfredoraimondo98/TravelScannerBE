@@ -414,20 +414,13 @@ exports.serchAll = async(req,res,next) => {
         bodyRes={}
         
 
-        if(rows_user[0]!=undefined){
-            bodyRes.user=rows_user
-        }
-        else{
-            bodyRes.user="Nessun utente torvato"
-        }
+       
+        bodyRes.user=rows_user
         
-        if(rows_place[0]!=undefined){
-            bodyRes.place=rows_place
-        }
-        else{
-            bodyRes.place="Nessun luogo trovato"
-        }
-    
+        
+        
+        bodyRes.place=rows_place
+        
         res.status(201).json(bodyRes)
         
     } catch (error) {

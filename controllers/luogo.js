@@ -121,6 +121,15 @@ exports.createPlace = async (req, res, next) =>{
 
 
 
+            //Inserire l'utente che ha creato il luogo come ambassador per quel luogo
+
+            const [rows_amb, field_amb] = await connection.query(query.insertAmbassador, [idUtente, idLuogo, 'fotoCopertina', 0]);
+            const [rows_ambDesc, field_ambDesc] = await connection.query(query.insertAmbassador, [idUtente, idLuogo, 'descrizione', 0]);
+            const [rows_ambAcc, field_ambAcc] = await connection.query(query.insertAmbassador, [idUtente, idLuogo, 'accessibilita', 0]);
+            const [rows_ambGall, field_ambGall] = await connection.query(query.insertAmbassador, [idUtente, idLuogo, 'fotoGallery', 0]);
+
+            await connection.query(query.updateCountAmbassadorByUser, [4, idUtente])
+ 
             await connection.commit(); //effettua il commit delle transazioni
 
             res.status(201).json({

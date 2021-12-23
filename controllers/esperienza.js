@@ -5,6 +5,7 @@ const { validationResult } = require('express-validator');
 const query = require('../utils/queries')
 const service = require('../utils/service');
 const queries = require('../utils/queries');
+const { connect } = require('../routes/auth');
 
 
 exports.createEsperienza = async (req, res, next)=>{
@@ -161,8 +162,23 @@ exports.votaFotoCopertina = async (req, res, next)=>{
 
         const [rows_voto, field_voto] = await connection.query(query.insertVoto, [idUtente,idEsperienza,1,"fotoCopertina"]);
         const [rows_votoFotoCopertina, field_votoFotoCopertina] = await connection.query(query.getNumVotiFotoCopertina, [idEsperienza]);
-        await connection.query(query.updateNumVotiFotoCopertina,[rows_votoFotoCopertina[0].count_foto_copertina+1,idEsperienza])
+        await connection.query(query.updateNumVotiFotoCopertina,[rows_votoFotoCopertina[0].count_foto_copertina + 1, idEsperienza])
+
+        //aggiornamento ambassador
         
+        var votoMyFotoCopertina = rows_votoFotoCopertina[0].count_foto_copertina + 1; 
+        
+        const [rows_luogo, field_luogo] = await connection.query(query.getLuogoByIdEsperienza, [idEsperienza]); //recupera il luogo dell'esperienza che si sta votando
+        var luogo = rows_luogo[0];
+
+        const [rows_ambVoto, field_ambVoto] = await connection.query(query.getCountVotoAmbassadorByLuogo, [luogo.id_luogo, 'fotoCopertina']);
+
+        //confronto voto con l'ambassador 
+        if(votoMyFotoCopertina > rows_ambVoto[0].count_voto){
+            await connection.query(query.updateAmbassador, [idUtente, votoMyFotoCopertina, luogo.id_luogo, 'fotoCopertina']); //l'utente appena votato diventa ambassador
+            await connection.query(query.updateCountAmbassadorByUser, [1, idUtente]); //aggiornamento count ambassador in 'utente'
+        }
+
         await connection.commit(); //effettua il commit delle transazioni
     
         res.status(201).json({

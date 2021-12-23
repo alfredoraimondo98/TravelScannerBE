@@ -27,7 +27,7 @@ exports.register = async (req, res, next) => {
     var email = req.body.email;
     var password = await bcrypt.hash(req.body.password, 12); //cripta password
     var dataDiNascita = '0000-00-00'//req.body.data_di_nascita;
-    var badge = "tipo gamification"; //badge che rappresenta la tipologia di utente (da definire)
+    var badge = "Turista moderato"; //badge che rappresenta la tipologia di utente
     var img; 
     
     if(req.file){ //Se presente la foto

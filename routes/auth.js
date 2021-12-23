@@ -13,7 +13,7 @@ router.post('/register',
         body('nome').isLength({max : 100}),
         body('cognome').isLength({max : 100}),
       //  body('data_di_nascita').matches('^[\d]{4}-[\d]{2}-[\d]{2}').withMessage("Inserisci una data valida"),
-        body('badge').isLength({max : 100})
+       // body('badge').isLength({max : 100})
     ], 
     authController.register); //registrazione utente
 

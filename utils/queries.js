@@ -186,6 +186,14 @@ module.exports = {
                                     AND esperienza.id_esperienza = creare_esperienza.id_esperienza
                                     WHERE creare_esperienza.id_utente = ?`, //recupera la gallery per ogni esperienza del luogo (per tutte le esperienze di un luogo)
 
+    getLuogoByIdEsperienza : "SELECT id_luogo FROM esperienza WHERE id_esperienza = ?",
+
+    getCountVotoAmbassadorByLuogo : `SELECT tipo_ambassador, count_voto FROM ambassador WHERE id_luogo = ? AND tipo_ambassador = ?`, //recupera ambassador per una data categoria e un dato luogo
+
+    updateAmbassador : "UPDATE ambassador SET id_utente = ?, count_voto = ? WHERE id_luogo = ? AND tipo_ambassador = ?", //Aggiorna utente ambassador 
+
+    updateCountAmbassadorByUser : "UPDATE utente SET count_ambassador = count_ambassador + ? WHERE id_utente = ?", //aggiorna il count ambassador dell'utente
+
     insertUser : "INSERT INTO utente (nome, cognome, email, password, data_di_nascita, badge, img) VALUES (?, ?, ?, ?, ?, ?, ?)",
     insertLuogo : "INSERT INTO luogo (titolo, posizione, citta, nazione, id_utente, data_creazione) VALUES (?, ?, ?, ?, ?, ?)",
     insertEsperienza : "INSERT INTO esperienza (descrizione, count_descrizione, foto_copertina, count_foto_copertina, accessibilita, count_accessibilita, id_luogo) VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -195,9 +203,9 @@ module.exports = {
     insertFoto: "INSERT INTO foto(path,id_gallery) VALUES (?,?)",
     insertVoto: "INSERT INTO voto(id_utente, id_esperienza, voto, tipo_voto) VALUES (?,?,?,?)",
     insertUserCreateExperience : "INSERT INTO creare_esperienza(id_utente, id_esperienza, data_creazione) VALUES (?, ?, ?)",
-    createGallery : "INSERT INTO gallery(count, id_esperienza) VALUES (?, ?)",
+    createGallery : "INSERT INTO gallery(count_gallery, id_esperienza) VALUES (?, ?)",
     insertFoto : "INSERT INTO foto(path, id_gallery) VALUES (?, ?)",
-   
+    insertAmbassador : "INSERT INTO ambassador(id_utente, id_luogo, tipo_ambassador, count_voto) VALUES (?, ?, ?, ?)",
 
     verifyMail : "SELECT email FROM utente WHERE email = ?",
     verifyLuogo : "SELECT titolo FROM luogo WHERE titolo = ?",

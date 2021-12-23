@@ -413,7 +413,7 @@ exports.votaAccessibilita = async (req, res, next)=>{
  * @param {*} res 
  * @param {*} next 
  */
- exports.getEsperienzeVotate = async(req, res, next) => {
+ exports.getTopRatedReviews = async(req, res, next) => {
 
     var idLuogo = req.body.id_luogo;
 
@@ -450,7 +450,7 @@ exports.votaAccessibilita = async (req, res, next)=>{
 
 
         //AGGIUNTA GALLERY ESPERIENZA
-        experiences.forEach( exp => {  
+        experiences.forEach( exp => {
             exp.img = service.server+exp.img; //Immagine utente
             exp.foto_copertina = service.server+exp.foto_copertina //immagine copertina
             exp['gallery'] = [];
@@ -468,10 +468,17 @@ exports.votaAccessibilita = async (req, res, next)=>{
         })
         
 
-        
-        res.status(201).json({
-            esperienze : experiences
+        //Conversione data
+        experiences.forEach( exp => {
+            let dataC = (exp.data_creazione.toISOString().slice(0,10)); //Conversione data
+            let y= dataC.slice(0,4)
+            let m = dataC.slice(5,7);
+            let d = dataC.slice(8-10);
+            exp.data_creazione = d+"-"+m+"-"+y;
         })
+
+        
+        res.status(201).send(experiences);
             
     }
     catch(err){ //se si verifica un errore 
@@ -497,7 +504,7 @@ exports.votaAccessibilita = async (req, res, next)=>{
  * @param {*} res 
  * @param {*} next 
  */
- exports.getEsperienzeRecenti = async(req, res, next) => {
+ exports.getRecentlyReviews = async(req, res, next) => {
 
     var idLuogo = req.body.id_luogo;
 
@@ -552,10 +559,16 @@ exports.votaAccessibilita = async (req, res, next)=>{
         })
         
 
-        
-        res.status(201).json({
-            esperienze : experiences
+        //Conversione data
+        experiences.forEach( exp => {
+            let dataC = (exp.data_creazione.toISOString().slice(0,10)); //Conversione data
+            let y= dataC.slice(0,4)
+            let m = dataC.slice(5,7);
+            let d = dataC.slice(8-10);
+            exp.data_creazione = d+"-"+m+"-"+y;
         })
+       
+        res.status(201).send(experiences);
             
     }
     catch(err){ //se si verifica un errore 

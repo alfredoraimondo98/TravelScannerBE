@@ -20,9 +20,9 @@ router.post('/votaDescrizione',esperienzaController.votaDescrizione)
 router.post('/votaAccessibilita',esperienzaController.votaAccessibilita)
 
 
-router.post('/getEsperienzeVotate', esperienzaController.getEsperienzeVotate); //Restituisce le eperienze in ordine di voto di un luogo
+router.post('/getTopRatedReviews', esperienzaController.getTopRatedReviews); //Restituisce le eperienze in ordine di voto di un luogo
 
-router.post('/getEsperienzeRecenti', esperienzaController.getEsperienzeRecenti); //Restituisce le esperienze più recenti di un luogo
+router.post('/getRecentlyReviews', esperienzaController.getRecentlyReviews); //Restituisce le esperienze più recenti di un luogo
 router.post('/getVotoEffettuatoDescrizione', esperienzaController.getVotoEffettuatoDescrizione) //restitusce il voto della descrizione dell'utente su una determina esperienza
 router.post('/getVotoEffettuatoFotoCopertina', esperienzaController.getVotoEffettuatoFotoCopertina)
 router.post('/getVotoEffettuatoAccessibilita', esperienzaController.getVotoEffettuatoAccesibilita)

@@ -165,7 +165,7 @@ module.exports = {
                             )`, //recupera totale voti accessibilità per la miglior accessibilità di un luogo
 
     
-    getEsperienzeWithUserByLuogo : `SELECT esperienza.*, creare_esperienza.data_creazione, utente.id_utente, utente.nome, utente.cognome, utente.img
+    getEsperienzeWithUserByLuogo : `SELECT esperienza.*, creare_esperienza.data_creazione, utente.id_utente, utente.nome, utente.cognome, utente.img, utente.badge
                                     FROM esperienza JOIN creare_esperienza JOIN utente
                                     ON esperienza.id_esperienza = creare_esperienza.id_esperienza
                                     AND creare_esperienza.id_utente = utente.id_utente

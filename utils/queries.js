@@ -41,7 +41,7 @@ module.exports = {
                                         ON esperienza.id_esperienza = creare_esperienza.id_esperienza
                                             AND creare_esperienza.id_utente = utente.id_utente
                                         WHERE id_luogo = ? 
-                                        ORDER BY count_descrizione DESC, creare_esperienza.data_creazione DESC LIMIT 1
+                                        ORDER BY count_foto_copertina DESC, creare_esperienza.data_creazione DESC LIMIT 1
                                         `, 
                                         
     getTopAccessibilitaByLuogoWithUser : `SELECT esperienza.id_esperienza, accessibilita, count_accessibilita, creare_esperienza.id_utente, 
@@ -186,6 +186,8 @@ module.exports = {
                                     AND esperienza.id_esperienza = creare_esperienza.id_esperienza
                                     WHERE creare_esperienza.id_utente = ?`, //recupera la gallery per ogni esperienza del luogo (per tutte le esperienze di un luogo)
 
+    getUserByIdEsperienza : "SELECT id_utente FROM creare_esperienza WHERE id_esperienza = ?",
+
     getLuogoByIdEsperienza : "SELECT id_luogo FROM esperienza WHERE id_esperienza = ?",
 
     getCountVotoAmbassadorByLuogo : `SELECT tipo_ambassador, count_voto FROM ambassador WHERE id_luogo = ? AND tipo_ambassador = ?`, //recupera ambassador per una data categoria e un dato luogo
@@ -202,6 +204,8 @@ module.exports = {
     insertGallery: "INSERT INTO gallery(count_gallery,id_esperienza) VALUES (?,?)",
     insertFoto: "INSERT INTO foto(path,id_gallery) VALUES (?,?)",
     insertVoto: "INSERT INTO voto(id_utente, id_esperienza, voto, tipo_voto) VALUES (?,?,?,?)",
+    deleteVoto: "DELETE FROM voto WHERE id_utente = ? AND id_esperienza = ? AND tipo_voto = ?",
+
     insertUserCreateExperience : "INSERT INTO creare_esperienza(id_utente, id_esperienza, data_creazione) VALUES (?, ?, ?)",
     createGallery : "INSERT INTO gallery(count_gallery, id_esperienza) VALUES (?, ?)",
     insertFoto : "INSERT INTO foto(path, id_gallery) VALUES (?, ?)",

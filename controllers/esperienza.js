@@ -145,8 +145,8 @@ finally{
 
 exports.votaFotoCopertina = async (req, res, next)=>{
     //console.log("ueueu")
-    var idEsperienza= req.body.idEsperienza
-    var idUtente= req.body.idUtente
+    var idEsperienza= req.body.id_esperienza
+    var idUtente= req.body.id_utente; //id utente loggato che sta votando
     
     
     const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
@@ -164,6 +164,9 @@ exports.votaFotoCopertina = async (req, res, next)=>{
         const [rows_votoFotoCopertina, field_votoFotoCopertina] = await connection.query(query.getNumVotiFotoCopertina, [idEsperienza]);
         await connection.query(query.updateNumVotiFotoCopertina,[rows_votoFotoCopertina[0].count_foto_copertina + 1, idEsperienza])
 
+        const [rows_utenteDaVotare, field_utenteDaVotare] = await connection.query(query.getUserByIdEsperienza, [idEsperienza]);
+        var idUtenteVotato = rows_utenteDaVotare[0].id_utente; //id dell'utente che riceve il voto
+
         //aggiornamento ambassador
         
         var votoMyFotoCopertina = rows_votoFotoCopertina[0].count_foto_copertina + 1; 
@@ -175,8 +178,8 @@ exports.votaFotoCopertina = async (req, res, next)=>{
 
         //confronto voto con l'ambassador 
         if(votoMyFotoCopertina > rows_ambVoto[0].count_voto){
-            await connection.query(query.updateAmbassador, [idUtente, votoMyFotoCopertina, luogo.id_luogo, 'fotoCopertina']); //l'utente appena votato diventa ambassador
-            await connection.query(query.updateCountAmbassadorByUser, [1, idUtente]); //aggiornamento count ambassador in 'utente'
+            await connection.query(query.updateAmbassador, [idUtenteVotato, votoMyFotoCopertina, luogo.id_luogo, 'fotoCopertina']); //l'utente appena votato diventa ambassador
+            await connection.query(query.updateCountAmbassadorByUser, [1, idUtenteVotato]); //aggiornamento count ambassador in 'utente'
         }
 
         await connection.commit(); //effettua il commit delle transazioni
@@ -187,6 +190,31 @@ exports.votaFotoCopertina = async (req, res, next)=>{
     }
         else
         {
+            const [rows_voto, field_voto] = await connection.query(query.deleteVoto, [idUtente,idEsperienza, "fotoCopertina"]);
+            const [rows_votoFotoCopertina, field_votoFotoCopertina] = await connection.query(query.getNumVotiFotoCopertina, [idEsperienza]);
+            await connection.query(query.updateNumVotiFotoCopertina,[rows_votoFotoCopertina[0].count_foto_copertina - 1, idEsperienza])
+
+            const [rows_utenteDaVotare, field_utenteDaVotare] = await connection.query(query.getUserByIdEsperienza, [idEsperienza]);
+            var idUtenteVotato = rows_utenteDaVotare[0].id_utente; //id dell'utente che riceve il voto
+
+            //aggiornamento ambassador
+            
+            var votoMyFotoCopertina = rows_votoFotoCopertina[0].count_foto_copertina - 1; 
+            
+            const [rows_luogo, field_luogo] = await connection.query(query.getLuogoByIdEsperienza, [idEsperienza]); //recupera il luogo dell'esperienza che si sta votando
+            var luogo = rows_luogo[0];
+
+            const [rows_ambVoto, field_ambVoto] = await connection.query(query.getCountVotoAmbassadorByLuogo, [luogo.id_luogo, 'fotoCopertina']);
+
+            const [rows_topCopertina, field_topCopertina] = await connection.query(query.getTopFotoCopertinaByLuogoWithUser, [luogo.id_luogo]);
+            var topCopertina = rows_topCopertina[0]; 
+
+            //confronto voto con l'ambassador 
+            if(votoMyFotoCopertina > rows_ambVoto[0].count_voto){
+                await connection.query(query.updateAmbassador, [idUtenteVotato, votoMyFotoCopertina, luogo.id_luogo, 'fotoCopertina']); //l'utente appena votato diventa ambassador
+                await connection.query(query.updateCountAmbassadorByUser, [1, idUtenteVotato]); //aggiornamento count ambassador in 'utente'
+            }
+
            
             res.status(201).json({
                 mess : 'già votato'

@@ -372,9 +372,11 @@ exports.votaFotoGallery = async (req, res, next)=>{
 }
 
 exports.votaDescrizione = async (req, res, next)=>{
-    var idEsperienza= req.body.idEsperienza
-    var idUtente= req.body.idUtente
-    var votoDescrizione= req.body.votoDescrizione
+    var idEsperienza= req.body.id_esperienza
+    var idUtente= req.body.id_utente
+    var votoDescrizione= req.body.voto_descrizione
+
+    var countTotalDescrizione; //Totale dei voti della descrizione
 
     const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
 
@@ -385,14 +387,17 @@ exports.votaDescrizione = async (req, res, next)=>{
     try{
         const [rows_verify, field_verify]= await connection.query(query.verifyVotoTipo,[idUtente, idEsperienza,"descrizione"])
         if(rows_verify[0]==undefined){
+
             //BLOCCO VOTAZIONE
             await connection.query(query.insertVoto,[idUtente,idEsperienza,votoDescrizione,"descrizione"])
             const[rows_votoTot, field_votoTot]= await connection.query(query.getTotVotieSomma,[idEsperienza,"descrizione"])
+            countTotalDescrizione = rows_votoTot[0].countVoti;
 
             sommaVoti=rows_votoTot[0].sommaVoti
             
             var mediaVoti=sommaVoti/rows_votoTot[0].countVoti
-            await connection.query(query.updateVotoDescrizione,[mediaVoti,sommaVoti,idEsperienza])
+
+            await connection.query(query.updateVotoDescrizione,[mediaVoti, countTotalDescrizione, idEsperienza])
             //FINE BLOCCO DI VOTAZIONE
 
             //BLOCCO DI AMBASSADOR
@@ -425,12 +430,14 @@ exports.votaDescrizione = async (req, res, next)=>{
 
 
             
-
+            console.log("********** TOTALE (PRIMO VOTO) ", sommaVoti, countTotalDescrizione);
             
             await connection.commit(); //effettua il commit delle transazioni
 
             res.status(201).json({
-                mess : 'ok'
+                mess : 'voto inserito',
+                count_descrizione : mediaVoti,
+                count_total_descrizione : countTotalDescrizione
             })
         }
         else{
@@ -438,9 +445,15 @@ exports.votaDescrizione = async (req, res, next)=>{
             //BLOCCO VOTAZIONE
             await connection.query(query.updateVoto,[votoDescrizione,idEsperienza,idUtente,"descrizione"])
             const[rows_votoTot, field_votoTot]= await connection.query(query.getTotVotieSomma,[idEsperienza,"descrizione"])
+            countTotalDescrizione = rows_votoTot[0].countVoti;
+
+
             sommaVoti=rows_votoTot[0].sommaVoti
             var mediaVoti=sommaVoti/rows_votoTot[0].countVoti
-            await connection.query(query.updateVotoDescrizione,[mediaVoti,sommaVoti,idEsperienza])
+            await connection.query(query.updateVotoDescrizione,[mediaVoti,countTotalDescrizione,idEsperienza])
+
+
+
             //FINE BLOCCO DI VOTAZIONE
 
             const [rows_utenteDaVotare, field_utenteDaVotare] = await connection.query(query.getUserByIdEsperienza, [idEsperienza]);
@@ -470,12 +483,14 @@ exports.votaDescrizione = async (req, res, next)=>{
 
             //BLOCCO AMBASSADOR
 
-
-
             //FINE BLOCCO AMBASSADOR
+            console.log("********** TOTALE ", mediaVoti, countTotalDescrizione);
+
             await connection.commit();
             res.status(201).json({
-                mess : 'voto aggiornato'
+                mess : 'voto aggiornato',
+                count_descrizione : mediaVoti,
+                count_total_descrizione : countTotalDescrizione
             })
         }
     }
@@ -495,9 +510,14 @@ exports.votaDescrizione = async (req, res, next)=>{
 
 
 exports.votaAccessibilita = async (req, res, next)=>{
-    var idEsperienza= req.body.idEsperienza
-    var idUtente= req.body.idUtente
-    var votoAccessibilita= req.body.votoAccessibilita
+
+    console.log("********************************")
+    var idEsperienza= req.body.id_esperienza
+    var idUtente= req.body.id_utente
+    var votoAccessibilita= req.body.voto_accessibilita
+
+    var countTotalAccessibilita; //Totale dei voti della descrizione
+
 
     const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
 
@@ -512,9 +532,12 @@ exports.votaAccessibilita = async (req, res, next)=>{
             //BLOCCO VOTAZIONE
             await connection.query(query.insertVoto,[idUtente,idEsperienza,votoAccessibilita,"accessibilita"])
             const[rows_votoTot, field_votoTot]= await connection.query(query.getTotVotieSomma,[idEsperienza,"accessibilita"])
+            countTotalAccessibilita = rows_votoTot[0].countVoti; // TOTALE VOTI
+
+
             var sommaVoti=rows_votoTot[0].sommaVoti
             var mediaVoti=sommaVoti/rows_votoTot[0].countVoti
-            await connection.query(query.updateVotoAccessibilita,[mediaVoti,sommaVoti,idEsperienza])
+            await connection.query(query.updateVotoAccessibilita,[mediaVoti,countTotalAccessibilita,idEsperienza])
             //FINE BLOCCO VOTAZIONE
 
             //BLOCCO AMBASSADOR
@@ -547,17 +570,20 @@ exports.votaAccessibilita = async (req, res, next)=>{
             await connection.commit(); //effettua il commit delle transazioni
 
             res.status(201).json({
-                mess : 'ok'
+                mess : 'voto inserito',
+                count_accessibilita : mediaVoti,
+                count_total_accessibilita : countTotalAccessibilita
             })
         }
         else{
             
             await connection.query(query.updateVoto,[votoAccessibilita,idEsperienza,idUtente,"accessibilita"])
             const[rows_votoTot, field_votoTot]= await connection.query(query.getTotVotieSomma,[idEsperienza,"accessibilita"])
+            countTotalAccessibilita = rows_votoTot[0].countVoti;
             var sommaVoti=rows_votoTot[0].sommaVoti
             var mediaVoti=sommaVoti/rows_votoTot[0].countVoti
             
-            await connection.query(query.updateVotoAccessibilita,[mediaVoti,sommaVoti,idEsperienza])
+            await connection.query(query.updateVotoAccessibilita,[mediaVoti,countTotalAccessibilita,idEsperienza])
 
             //BLOCCO AMBASSADOR
             const [rows_utenteDaVotare, field_utenteDaVotare] = await connection.query(query.getUserByIdEsperienza, [idEsperienza]);
@@ -589,7 +615,9 @@ exports.votaAccessibilita = async (req, res, next)=>{
 
             await connection.commit();
             res.status(201).json({
-                mess : 'voto aggiornato'
+                mess : 'voto aggiornato',
+                count_accessibilita : mediaVoti,
+                count_total_accessibilita : countTotalAccessibilita
             })
         }
     }
@@ -1065,6 +1093,246 @@ exports.votaAccessibilita = async (req, res, next)=>{
         console.log("****** VOTE VERIFY, ", values[i]);
 
         experiences[i]['flag_voto_gallery'] = values[i];
+
+        //data
+        let dataC = (experiences[i].data_creazione.toISOString().slice(0,10)); //Conversione data
+        let y= dataC.slice(0,4)
+        let m = dataC.slice(5,7);
+        let d = dataC.slice(8-10);
+        experiences[i].data_creazione = d+"-"+m+"-"+y;
+    }
+
+        res.status(201).send(experiences);
+    })
+            
+    }
+    catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
+
+}
+
+
+
+
+
+/**
+ * DESCRIZIONE: restituisce le esperienze di un luogo in ordine dei voti relativi alla gallery
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ */
+ exports.getTopDescriptionReviews = async(req, res, next) => {
+    console.log("*********************+")
+    var idLuogo = req.body.id_luogo;
+    var idUtente = req.body.id_utente;
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    esperienzeDelLuogo = []; 
+
+    try {
+    
+        const [rows_countEsperienze, field_countEsperienze] = await connection.query(query.getEsperienzeCountByLuogo, [idLuogo]);
+        var experiencesCount = rows_countEsperienze; // recupera tutte le esperienze del luogo con i count relativi alla votazione di tipo "esperienza"
+
+        const[rows_exp, field_exp]= await connection.query(query.getEsperienzeWithUserByLuogo,[idLuogo]) //recupera le esperienze e gli utenti che le hanno create
+        var experiences = rows_exp;
+
+        const[rows_gallery, field_gallery] = await connection.query(query.getGalleryByLuogo, [idLuogo]) //recupera le gallery delle esperienze di un luogo
+        var galleryComplete = rows_gallery;
+
+        //console.log("*** ex1 ", experiencesCount);
+        //console.log("*** ex2", experiences);
+        //console.log("*** ex3 ", galleryComplete);
+
+
+        //AGGIUNTA COUNT ESPERIENZA
+        experiences.forEach( exp => { //merge dati dell'esperienza con i dati del count dei voti
+            exp['count_esperienza'] = 0;
+            experiencesCount.forEach( count => {
+                if(exp.id_esperienza == count.id_esperienza){
+                    exp['count_esperienza'] = count.count_esperienza;
+                }
+            })
+        })
+
+
+        //AGGIUNTA GALLERY ESPERIENZA
+        experiences.forEach( exp => {  
+            exp.img = service.server+exp.img; //Immagine utente
+            exp.foto_copertina = service.server+exp.foto_copertina //immagine copertina
+            exp['gallery'] = [];
+            exp['count_gallery'] = 0; // count gallery
+            galleryComplete.forEach( gallery => {
+                if(exp.id_esperienza == gallery.id_esperienza){
+                    exp['count_gallery'] = gallery.count_gallery; //setta il count della gallery
+                   // console.log("*** GALLERY ", exp.gallery);
+                    exp.gallery.push(service.server+gallery.path); //immagine gallery
+                }
+            })
+        })
+
+       //ordinamento in base ai voti della gallery 
+        experiences.sort( function(a, b) {
+            return b.count_descrizione - a.count_descrizione;
+        })
+        
+
+    // Recupera informazioni dei like per la fotoCopertina dell'utente loggato
+    var promisesArray = [];
+    experiences.forEach(async exp => {
+        
+            var p = new Promise(async (resolve, reject) => {
+                const [rows, field] = await connection.query(query.verifyVotoTipo, [idUtente, exp.id_esperienza, 'descrizione']);
+                if(rows[0] != undefined){
+                    resolve(true);  
+                }
+                else{
+                    resolve(false);  
+                }
+            })
+
+            promisesArray.push(p);
+    });
+
+    
+    Promise.all(promisesArray).then( (values) => {
+
+        //Conversione data
+    for(let i = 0; i < experiences.length; i++){
+        //voto esperienza per l'utente loggato (true|false)
+        console.log("****** VOTE VERIFY, ", values[i]);
+
+        experiences[i]['flag_voto_descrizione'] = values[i];
+
+        //data
+        let dataC = (experiences[i].data_creazione.toISOString().slice(0,10)); //Conversione data
+        let y= dataC.slice(0,4)
+        let m = dataC.slice(5,7);
+        let d = dataC.slice(8-10);
+        experiences[i].data_creazione = d+"-"+m+"-"+y;
+    }
+
+        res.status(201).send(experiences);
+    })
+            
+    }
+    catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
+
+}
+
+
+
+
+
+/**
+ * ACCESSIBILITA: restituisce le esperienze di un luogo in ordine dei voti relativi alla gallery
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ */
+ exports.getTopAccessibilityReviews = async(req, res, next) => {
+
+   
+    
+    var idLuogo = req.body.id_luogo;
+    var idUtente = req.body.id_utente;
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    esperienzeDelLuogo = []; 
+
+    try {
+    
+        const [rows_countEsperienze, field_countEsperienze] = await connection.query(query.getEsperienzeCountByLuogo, [idLuogo]);
+        var experiencesCount = rows_countEsperienze; // recupera tutte le esperienze del luogo con i count relativi alla votazione di tipo "esperienza"
+
+        const[rows_exp, field_exp]= await connection.query(query.getEsperienzeWithUserByLuogo,[idLuogo]) //recupera le esperienze e gli utenti che le hanno create
+        var experiences = rows_exp;
+
+        const[rows_gallery, field_gallery] = await connection.query(query.getGalleryByLuogo, [idLuogo]) //recupera le gallery delle esperienze di un luogo
+        var galleryComplete = rows_gallery;
+
+        //console.log("*** ex1 ", experiencesCount);
+        //console.log("*** ex2", experiences);
+        //console.log("*** ex3 ", galleryComplete);
+
+
+        //AGGIUNTA COUNT ESPERIENZA
+        experiences.forEach( exp => { //merge dati dell'esperienza con i dati del count dei voti
+            exp['count_esperienza'] = 0;
+            experiencesCount.forEach( count => {
+                if(exp.id_esperienza == count.id_esperienza){
+                    exp['count_esperienza'] = count.count_esperienza;
+                }
+            })
+        })
+
+
+        //AGGIUNTA GALLERY ESPERIENZA
+        experiences.forEach( exp => {  
+            exp.img = service.server+exp.img; //Immagine utente
+            exp.foto_copertina = service.server+exp.foto_copertina //immagine copertina
+            exp['gallery'] = [];
+            exp['count_gallery'] = 0; // count gallery
+            galleryComplete.forEach( gallery => {
+                if(exp.id_esperienza == gallery.id_esperienza){
+                    exp['count_gallery'] = gallery.count_gallery; //setta il count della gallery
+                   // console.log("*** GALLERY ", exp.gallery);
+                    exp.gallery.push(service.server+gallery.path); //immagine gallery
+                }
+            })
+        })
+
+       //ordinamento in base ai voti della gallery 
+        experiences.sort( function(a, b) {
+            return b.count_accessibilita - a.count_accessibilita;
+        })
+        
+
+    // Recupera informazioni dei like per la fotoCopertina dell'utente loggato
+    var promisesArray = [];
+    experiences.forEach(async exp => {
+        
+            var p = new Promise(async (resolve, reject) => {
+                const [rows, field] = await connection.query(query.verifyVotoTipo, [idUtente, exp.id_esperienza, 'accessibilita']);
+                if(rows[0] != undefined){
+                    resolve(true);  
+                }
+                else{
+                    resolve(false);  
+                }
+            })
+
+            promisesArray.push(p);
+    });
+
+    
+    Promise.all(promisesArray).then( (values) => {
+
+        //Conversione data
+    for(let i = 0; i < experiences.length; i++){
+        //voto esperienza per l'utente loggato (true|false)
+        console.log("****** VOTE VERIFY, ", values[i]);
+
+        experiences[i]['flag_voto_accessibilita'] = values[i];
 
         //data
         let dataC = (experiences[i].data_creazione.toISOString().slice(0,10)); //Conversione data

@@ -166,7 +166,7 @@ module.exports = {
 
     
     getEsperienzeWithUserByLuogo : `SELECT esperienza.*, creare_esperienza.data_creazione, utente.id_utente, utente.nome, utente.cognome, utente.img, utente.badge
-                                    FROM esperienza JOIN creare_esperienza JOIN utente
+                                    FROM esperienza JOIN creare_esperienza JOIN utente  
                                     ON esperienza.id_esperienza = creare_esperienza.id_esperienza
                                     AND creare_esperienza.id_utente = utente.id_utente
                                     WHERE esperienza.id_luogo=?`, //recupera le esperienze e l'utente che ha creato l'esperienza (per tutte le esperienze di un luogo)

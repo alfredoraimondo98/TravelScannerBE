@@ -98,49 +98,59 @@ exports.createEsperienza = async (req, res, next)=>{
 
 }
 
+/**
+ * votazione dell'esperienza totale
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ */
 exports.votaEsperienzaTot = async (req, res, next)=>{
-var idEsperienza= req.body.idEsperienza
-var idUtente= req.body.idUtente
+    var idEsperienza= req.body.id_esperienza;
+    var idUtente= req.body.id_utente;
+    var isLiked = req.body.is_liked; 
+        //* isLiked = true -> // ha già votato -> devo eliminare il voto
+        //* isLiked = false -> // voglio votare -> devo inserire il voto
 
-const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+ 
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
 
-    await connection.beginTransaction(async function (err) { //avvia una nuova transazione
-        if (err) { throw err; }
-    });
+        /*
+        await connection.beginTransaction(async function (err) { //avvia una nuova transazione
+            if (err) { throw err; }
+        });
+        */
+    try{   
 
-try{
-    //if(await verifyVoto(idUtente,idEsperienza)){ //se il luogo è già presente viene restituito TRUE e non si può procedere alla creazione
-    console.log("ci sono")
-    if (!await connection.query(query.verifyVoto,[idUtente, idEsperienza])){
-    const [rows_voto, field_voto] = await connection.query(query.insertVoto, [idUtente,idEsperienza,1,"esperienza"]);
+        if(isLiked == 'false'){
+            console.log("*** sto votando");
+            const [rows_voto, field_voto] = await connection.query(query.insertVoto, [idUtente, idEsperienza, 1, "esperienza"]); //inserisce il voto
 
-    await connection.commit(); //effettua il commit delle transazioni
+            res.status(201).json({
+                mess : 'voto inserito'
+            })
+        }
+        else{
+            console.log("*** sto eliminando il voto")
+            const [rows_voto, field_voto] = await connection.query(query.deleteVoto, [idUtente, idEsperienza, "esperienza"]); //elimina il voto
 
-    res.status(201).json({
-        mess : 'ok'
-    })
-}
-    else
-    {
-        res.status(201).json({
-            mess : 'già votato'
-        })
-    }   
+            res.status(201).json({
+                mess : 'voto eliminato'
+            })
+        }  
     
-}
-catch(err){ //se si verifica un errore 
-    console.log("err " , err);
-    await connection.rollback(); //effettua il commit delle transazioni
+        // await connection.commit(); //effettua il commit delle transazioni
+    }
+    catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+       // await connection.rollback(); //effettua il commit delle transazioni
 
-    res.status(401).json({
-        mess : err
-    })
-}
-finally{
-    await connection.release(); //rilascia la connessione al termine delle operazioni 
-}
-
-
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
 }
 
 exports.votaFotoCopertina = async (req, res, next)=>{
@@ -606,6 +616,7 @@ exports.votaAccessibilita = async (req, res, next)=>{
  exports.getTopRatedReviews = async(req, res, next) => {
 
     var idLuogo = req.body.id_luogo;
+    var idUtente = req.body.id_utente; //id utente che fa la richiesta (verificare se ha già messo like all'esperienza)
 
     const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
 
@@ -626,6 +637,8 @@ exports.votaAccessibilita = async (req, res, next)=>{
     
         //console.log("*** ex2", experiences);
         //console.log("*** ex3 ", galleryComplete);
+
+
 
 
         //AGGIUNTA COUNT ESPERIENZA
@@ -658,17 +671,48 @@ exports.votaAccessibilita = async (req, res, next)=>{
         })
         
 
-        //Conversione data
-        experiences.forEach( exp => {
-            let dataC = (exp.data_creazione.toISOString().slice(0,10)); //Conversione data
+        
+        // Recupera informazioni dei like dell'utente loggato
+        var promisesArray = [];
+        var resultsVoteVerify = [];
+        experiences.forEach(async exp => {
+            
+                var p = new Promise(async (resolve, reject) => {
+                    const [rows, field] = await connection.query(query.verifyVotoTipo, [idUtente, exp.id_esperienza, 'esperienza']);
+                    if(rows[0] != undefined){
+                        resolve(true);  
+                        //resultsVoteVerify.push(rows[0].voto);
+                    }
+                    else{
+                        resolve(false);  
+                        //resultsVoteVerify.push(0);
+                    }
+                })
+
+                promisesArray.push(p);
+        });
+        
+        Promise.all(promisesArray).then( (values) => {
+           // console.log("****** VOTE VERIFY, ", values[0]);
+            //resultsVoteVerify.push(values);
+
+            //Conversione data
+        for(let i = 0; i < experiences.length; i++){
+            //voto esperienza per l'utente loggato (true|false)
+
+            experiences[i]['flag_voto_esperienza'] = values[i];
+
+            //data
+            let dataC = (experiences[i].data_creazione.toISOString().slice(0,10)); //Conversione data
             let y= dataC.slice(0,4)
             let m = dataC.slice(5,7);
             let d = dataC.slice(8-10);
-            exp.data_creazione = d+"-"+m+"-"+y;
+            experiences[i].data_creazione = d+"-"+m+"-"+y;
+        }
+    
+            res.status(201).send(experiences);
         })
-
-        
-        res.status(201).send(experiences);
+            
             
     }
     catch(err){ //se si verifica un errore 
@@ -694,6 +738,7 @@ exports.votaAccessibilita = async (req, res, next)=>{
  exports.getRecentlyReviews = async(req, res, next) => {
 
     var idLuogo = req.body.id_luogo;
+    var idUtente = req.body.id_utente;
 
     const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
 
@@ -746,16 +791,47 @@ exports.votaAccessibilita = async (req, res, next)=>{
         })
         
 
+    // Recupera informazioni dei like dell'utente loggato
+    var promisesArray = [];
+    var resultsVoteVerify = [];
+    experiences.forEach(async exp => {
+        
+            var p = new Promise(async (resolve, reject) => {
+                const [rows, field] = await connection.query(query.verifyVotoTipo, [idUtente, exp.id_esperienza, 'esperienza']);
+                if(rows[0] != undefined){
+                    resolve(true);  
+                    //resultsVoteVerify.push(rows[0].voto);
+                }
+                else{
+                    resolve(false);  
+                    //resultsVoteVerify.push(0);
+                }
+            })
+
+            promisesArray.push(p);
+    });
+
+    
+    Promise.all(promisesArray).then( (values) => {
+        //resultsVoteVerify.push(values);
+
         //Conversione data
-        experiences.forEach( exp => {
-            let dataC = (exp.data_creazione.toISOString().slice(0,10)); //Conversione data
-            let y= dataC.slice(0,4)
-            let m = dataC.slice(5,7);
-            let d = dataC.slice(8-10);
-            exp.data_creazione = d+"-"+m+"-"+y;
-        })
-       
+    for(let i = 0; i < experiences.length; i++){
+        //voto esperienza per l'utente loggato (true|false)
+        console.log("****** VOTE VERIFY, ", values[i]);
+
+        experiences[i]['flag_voto_esperienza'] = values[i];
+
+        //data
+        let dataC = (experiences[i].data_creazione.toISOString().slice(0,10)); //Conversione data
+        let y= dataC.slice(0,4)
+        let m = dataC.slice(5,7);
+        let d = dataC.slice(8-10);
+        experiences[i].data_creazione = d+"-"+m+"-"+y;
+    }
+
         res.status(201).send(experiences);
+    })
             
     }
     catch(err){ //se si verifica un errore 
@@ -949,6 +1025,51 @@ exports.getVotoEffettuatoAccesibilita = async(req,res,next)=>{
         await connection.release(); //rilascia la connessione al termine delle operazioni 
     }    
 }
+
+
+exports.getVotoEffettuatoEsperienza = async(req,res,next)=>{
+    var idEsperienza= req.body.id_esperienza;
+    var idUtente= req.body.id_utente;
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    await connection.beginTransaction(async function (err) { //avvia una nuova transazione
+        if (err) { throw err; }
+    });
+
+    try{
+
+        const [rows_verify, field_verify]= await connection.query(query.verifyVotoTipo,[idUtente, idEsperienza,"esperienza"])
+        if(rows_verify[0]==undefined){
+            
+            await connection.commit(); //effettua il commit delle transazioni
+
+            res.status(201).json({
+                esperienza: 0
+            })
+        }
+        else{
+            
+            esperienza= rows_verify[0].voto
+
+            await connection.commit();
+            res.status(201).json({
+                esperienza: esperienza
+            })
+        }
+    }catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
+}
+
+
 
 exports.updateEsperienza = async(req,res,next)=>{
     var idEsperienza= req.body.idEsperienza;

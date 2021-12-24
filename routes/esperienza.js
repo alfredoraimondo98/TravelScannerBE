@@ -27,6 +27,7 @@ router.post('/getVotoEffettuatoDescrizione', esperienzaController.getVotoEffettu
 router.post('/getVotoEffettuatoFotoCopertina', esperienzaController.getVotoEffettuatoFotoCopertina)
 router.post('/getVotoEffettuatoAccessibilita', esperienzaController.getVotoEffettuatoAccesibilita)
 router.post('/getVotoEffettuatoGallery', esperienzaController.getVotoEffettuatoFotoGallery)
+router.post('/getVotoEffettuatoEsperienza', esperienzaController.getVotoEffettuatoFotoGallery)
 
 router.post('/updateEsperienza',upload.array('fotoGallery',10),
 [

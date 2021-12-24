@@ -134,7 +134,7 @@ exports.votaEsperienzaTot = async (req, res, next)=>{
             const [rows_voto, field_voto] = await connection.query(query.deleteVoto, [idUtente, idEsperienza, "esperienza"]); //elimina il voto
 
             res.status(201).json({
-                mess : 'voto eliminato'
+                mess : 'voto cancellato'
             })
         }  
     
@@ -201,7 +201,7 @@ exports.votaFotoCopertina = async (req, res, next)=>{
         await connection.commit(); //effettua il commit delle transazioni
     
         res.status(201).json({
-            mess : 'ok'
+            mess : 'voto inserito'
         })
     }
         else
@@ -241,7 +241,7 @@ exports.votaFotoCopertina = async (req, res, next)=>{
 
            
             res.status(201).json({
-                mess : 'già votato'
+                mess : 'voto cancellato'
             })
         }   
         
@@ -312,7 +312,7 @@ exports.votaFotoGallery = async (req, res, next)=>{
         await connection.commit(); //effettua il commit delle transazioni
     
         res.status(201).json({
-            mess : 'ok'
+            mess : 'voto inserito'
         })
     }
         else
@@ -354,7 +354,7 @@ exports.votaFotoGallery = async (req, res, next)=>{
         }   
 
         res.status(201).json({
-            mess: "voto eliminato"
+            mess: "voto cancellato"
         })
         
     }
@@ -657,9 +657,12 @@ exports.votaAccessibilita = async (req, res, next)=>{
             exp.img = service.server+exp.img; //Immagine utente
             exp.foto_copertina = service.server+exp.foto_copertina //immagine copertina
             exp['gallery'] = [];
+            exp['count_gallery'] = 0;
             galleryComplete.forEach( gallery => {
                 if(exp.id_esperienza == gallery.id_esperienza){
-                   // console.log("*** GALLERY ", exp.gallery);
+
+                    exp['count_gallery'] = gallery.count_gallery; //setta il count della gallery
+
                     exp.gallery.push(service.server+gallery.path); //immagine gallery
                 }
             })
@@ -777,9 +780,12 @@ exports.votaAccessibilita = async (req, res, next)=>{
             exp.img = service.server+exp.img; //Immagine utente
             exp.foto_copertina = service.server+exp.foto_copertina //immagine copertina
             exp['gallery'] = [];
+            exp['count_gallery'] = 0;
             galleryComplete.forEach( gallery => {
                 if(exp.id_esperienza == gallery.id_esperienza){
-                   // console.log("*** GALLERY ", exp.gallery);
+
+                    exp['count_gallery'] = gallery.count_gallery; //setta il count della gallery
+
                     exp.gallery.push(service.server+gallery.path); //immagine gallery
                 }
             })
@@ -846,6 +852,245 @@ exports.votaAccessibilita = async (req, res, next)=>{
     }
 
 }
+
+
+
+/**
+ * FOTO COPERTINA: restituisce le esperienze di un luogo in ordine dei voti relativi alla foto copertina
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ */
+ exports.getTopCoverPhotoReviews = async(req, res, next) => {
+
+    var idLuogo = req.body.id_luogo;
+    var idUtente = req.body.id_utente;
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    esperienzeDelLuogo = []; 
+
+    try {
+    
+        const [rows_countEsperienze, field_countEsperienze] = await connection.query(query.getEsperienzeCountByLuogo, [idLuogo]);
+        var experiencesCount = rows_countEsperienze; // recupera tutte le esperienze del luogo con i count relativi alla votazione di tipo "esperienza"
+
+        const[rows_exp, field_exp]= await connection.query(query.getEsperienzeWithUserByLuogo,[idLuogo]) //recupera le esperienze e gli utenti che le hanno create
+        var experiences = rows_exp;
+
+        const[rows_gallery, field_gallery] = await connection.query(query.getGalleryByLuogo, [idLuogo]) //recupera le gallery delle esperienze di un luogo
+        var galleryComplete = rows_gallery;
+
+        //console.log("*** ex1 ", experiencesCount);
+    
+        //console.log("*** ex2", experiences);
+        //console.log("*** ex3 ", galleryComplete);
+
+
+        //AGGIUNTA COUNT ESPERIENZA
+        experiences.forEach( exp => { //merge dati dell'esperienza con i dati del count dei voti
+            exp['count_esperienza'] = 0;
+            experiencesCount.forEach( count => {
+                if(exp.id_esperienza == count.id_esperienza){
+                    exp['count_esperienza'] = count.count_esperienza;
+                }
+            })
+        })
+
+
+        //AGGIUNTA GALLERY ESPERIENZA
+        experiences.forEach( exp => {  
+            exp.img = service.server+exp.img; //Immagine utente
+            exp.foto_copertina = service.server+exp.foto_copertina //immagine copertina
+            exp['gallery'] = [];
+            exp['count_gallery'] = 0;
+            galleryComplete.forEach( gallery => {
+                if(exp.id_esperienza == gallery.id_esperienza){
+
+                    exp['count_gallery'] = gallery.count_gallery; //setta il count della gallery
+
+                    exp.gallery.push(service.server+gallery.path); //immagine gallery
+                }
+            })
+        })
+
+       //ordinamento in base ai voti della foto copertina (dall'esperienza più recente alla meno recente)
+        experiences.sort( function(a, b) {
+            return b.count_foto_copertina - a.count_foto_copertina
+        })
+        
+
+    // Recupera informazioni dei like per la fotoCopertina dell'utente loggato
+    var promisesArray = [];
+    experiences.forEach(async exp => {
+        
+            var p = new Promise(async (resolve, reject) => {
+                const [rows, field] = await connection.query(query.verifyVotoTipo, [idUtente, exp.id_esperienza, 'fotoCopertina']);
+                if(rows[0] != undefined){
+                    resolve(true);  
+                }
+                else{
+                    resolve(false);  
+                }
+            })
+
+            promisesArray.push(p);
+    });
+
+    
+    Promise.all(promisesArray).then( (values) => {
+
+        //Conversione data
+    for(let i = 0; i < experiences.length; i++){
+        //voto esperienza per l'utente loggato (true|false)
+        console.log("****** VOTE VERIFY, ", values[i]);
+
+        experiences[i]['flag_voto_fotoCopertina'] = values[i];
+
+        //data
+        let dataC = (experiences[i].data_creazione.toISOString().slice(0,10)); //Conversione data
+        let y= dataC.slice(0,4)
+        let m = dataC.slice(5,7);
+        let d = dataC.slice(8-10);
+        experiences[i].data_creazione = d+"-"+m+"-"+y;
+    }
+
+        res.status(201).send(experiences);
+    })
+            
+    }
+    catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
+
+}
+
+
+
+
+/**
+ * GALLERY: restituisce le esperienze di un luogo in ordine dei voti relativi alla gallery
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ */
+ exports.getTopGalleryReviews = async(req, res, next) => {
+
+    var idLuogo = req.body.id_luogo;
+    var idUtente = req.body.id_utente;
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    esperienzeDelLuogo = []; 
+
+    try {
+    
+        const [rows_countEsperienze, field_countEsperienze] = await connection.query(query.getEsperienzeCountByLuogo, [idLuogo]);
+        var experiencesCount = rows_countEsperienze; // recupera tutte le esperienze del luogo con i count relativi alla votazione di tipo "esperienza"
+
+        const[rows_exp, field_exp]= await connection.query(query.getEsperienzeWithUserByLuogo,[idLuogo]) //recupera le esperienze e gli utenti che le hanno create
+        var experiences = rows_exp;
+
+        const[rows_gallery, field_gallery] = await connection.query(query.getGalleryByLuogo, [idLuogo]) //recupera le gallery delle esperienze di un luogo
+        var galleryComplete = rows_gallery;
+
+        //console.log("*** ex1 ", experiencesCount);
+    
+        //console.log("*** ex2", experiences);
+        //console.log("*** ex3 ", galleryComplete);
+
+
+        //AGGIUNTA COUNT ESPERIENZA
+        experiences.forEach( exp => { //merge dati dell'esperienza con i dati del count dei voti
+            exp['count_esperienza'] = 0;
+            experiencesCount.forEach( count => {
+                if(exp.id_esperienza == count.id_esperienza){
+                    exp['count_esperienza'] = count.count_esperienza;
+                }
+            })
+        })
+
+
+        //AGGIUNTA GALLERY ESPERIENZA
+        experiences.forEach( exp => {  
+            exp.img = service.server+exp.img; //Immagine utente
+            exp.foto_copertina = service.server+exp.foto_copertina //immagine copertina
+            exp['gallery'] = [];
+            exp['count_gallery'] = 0; // count gallery
+            galleryComplete.forEach( gallery => {
+                if(exp.id_esperienza == gallery.id_esperienza){
+                    exp['count_gallery'] = gallery.count_gallery; //setta il count della gallery
+                   // console.log("*** GALLERY ", exp.gallery);
+                    exp.gallery.push(service.server+gallery.path); //immagine gallery
+                }
+            })
+        })
+
+       //ordinamento in base ai voti della gallery 
+        experiences.sort( function(a, b) {
+            return b.count_gallery - a.count_gallery
+        })
+        
+
+    // Recupera informazioni dei like per la fotoCopertina dell'utente loggato
+    var promisesArray = [];
+    experiences.forEach(async exp => {
+        
+            var p = new Promise(async (resolve, reject) => {
+                const [rows, field] = await connection.query(query.verifyVotoTipo, [idUtente, exp.id_esperienza, 'fotoGallery']);
+                if(rows[0] != undefined){
+                    resolve(true);  
+                }
+                else{
+                    resolve(false);  
+                }
+            })
+
+            promisesArray.push(p);
+    });
+
+    
+    Promise.all(promisesArray).then( (values) => {
+
+        //Conversione data
+    for(let i = 0; i < experiences.length; i++){
+        //voto esperienza per l'utente loggato (true|false)
+        console.log("****** VOTE VERIFY, ", values[i]);
+
+        experiences[i]['flag_voto_gallery'] = values[i];
+
+        //data
+        let dataC = (experiences[i].data_creazione.toISOString().slice(0,10)); //Conversione data
+        let y= dataC.slice(0,4)
+        let m = dataC.slice(5,7);
+        let d = dataC.slice(8-10);
+        experiences[i].data_creazione = d+"-"+m+"-"+y;
+    }
+
+        res.status(201).send(experiences);
+    })
+            
+    }
+    catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
+
+}
+
 
 exports.getVotoEffettuatoDescrizione = async(req,res,next)=>{
     var idEsperienza= req.body.id_esperienza;
@@ -1149,6 +1394,5 @@ exports.updateEsperienza = async(req,res,next)=>{
         })
     }
 
-
-
 }
+

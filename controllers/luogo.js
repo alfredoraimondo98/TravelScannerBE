@@ -367,7 +367,7 @@ exports.getPlace = async (req, res, next) => {
         }
         console.log("*** fotoCopertina più votata: ", fotoCopertina);
 
-
+        // GALLERY 
         const [rows_gallery, field_gallery] = await connection.query(query.getTopGalleryByLuogoWithUser, [idLuogo]); //recupera la miglior gallery (con le relative foto) per il luogo
         var gallery;
         if(rows_gallery[0]){
@@ -470,7 +470,7 @@ exports.getPlace = async (req, res, next) => {
             costo_massimo : costo.costo_massimo,
 
             id_gallery : gallery.id_gallery,
-            count_gallery : gallery.count_gallery,
+            count_gallery : countGallery, 
             gallery : fotoGallery,
             ambassador_gallery_id : gallery[0].id_utente,
             ambassador_gallery_nome : gallery[0].nome,

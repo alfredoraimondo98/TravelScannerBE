@@ -21,8 +21,11 @@ router.post('/votaAccessibilita',esperienzaController.votaAccessibilita)
 
 
 router.post('/getTopRatedReviews', esperienzaController.getTopRatedReviews); //Restituisce le eperienze in ordine di voto di un luogo
-
 router.post('/getRecentlyReviews', esperienzaController.getRecentlyReviews); //Restituisce le esperienze più recenti di un luogo
+router.post('/getTopCoverPhotoReviews', esperienzaController.getTopCoverPhotoReviews); //restituisce le esperienze in ordine di voto delle foto copertine
+router.post('/getTopGalleryReviews', esperienzaController.getTopGalleryReviews); //restituisce le esperienze in ordine di voto delle foto copertine
+
+
 router.post('/getVotoEffettuatoDescrizione', esperienzaController.getVotoEffettuatoDescrizione) //restitusce il voto della descrizione dell'utente su una determina esperienza
 router.post('/getVotoEffettuatoFotoCopertina', esperienzaController.getVotoEffettuatoFotoCopertina)
 router.post('/getVotoEffettuatoAccessibilita', esperienzaController.getVotoEffettuatoAccesibilita)
@@ -32,5 +35,9 @@ router.post('/getVotoEffettuatoEsperienza', esperienzaController.getVotoEffettua
 router.post('/updateEsperienza',upload.array('fotoGallery',10),
 [
 
-], esperienzaController.updateEsperienza)
+], esperienzaController.updateEsperienza);
+
+
+ 
+
 module.exports= router

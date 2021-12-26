@@ -41,7 +41,11 @@ router.post('/updatePassword', [
     ],
     userController.updatePassword)
 
+router.post('/updateImg',  upload.single('img'), userController.updateImg);
 
+
+router.post('/getCountPost', userController.getCountPost); //recupera il numero di post dell'utente
+router.post('/getCountLike', userController.getCountLike); //recupera il numero di post dell'utente
 
 
 router.post('/forgottenPassword', userController.forgottenPassword); //procedura di password dimendicata

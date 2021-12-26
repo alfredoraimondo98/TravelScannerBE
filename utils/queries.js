@@ -6,6 +6,10 @@ module.exports = {
     getPlaceByTitle: "SELECT * from luogo WHERE titolo LIKE ? ",
     getAllLuoghi : "SELECT * FROM luogo",
     getGallery: "SELECT id_gallery FROM gallery WHERE id_esperienza = ?",
+    getCountPostByIdUser : "SELECT COUNT(*) as count FROM creare_esperienza WHERE id_utente = ?", //recupera il numero di esperienze create dall'utente
+    
+    getEsperienzaByIdUtente : "SELECT * FROM creare_esperienza WHERE id_utente = ?", //esperienze dell'utente
+    getCountLikeByIdEsperienza : "SELECT id_esperienza, COUNT(*) count FROM voto WHERE id_esperienza = ? AND tipo_voto = ?",
 
     getAllPlacesWithOptionalField : `SELECT luogo.id_luogo, luogo.titolo, luogo.citta, luogo.nazione, luogo.posizione, esperienza.foto_copertina, esperienza.count_foto_copertina, 
                                             orari_di_apertura.orario_apertura, orari_di_apertura.orario_chiusura, costo.costo_minimo, costo.costo_massimo

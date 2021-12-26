@@ -259,6 +259,57 @@ exports.updateMyProfile = async (req, res, next) =>{
     }
 }
 
+
+
+
+/**
+ * UPDATE IMG
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * @returns 
+ */
+ exports.updateImg = async (req, res, next) =>{
+    
+    var idUtente = req.body.id_utente;
+    var img;
+
+    if(req.file){
+        img = req.file.path.slice(6)  //recupera path relativo dell'img (in req.file) 
+        img = img.replace(/\\/g, "/"); 
+    }
+    else{
+        img = null;
+    }
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    try {
+    
+        //Aggiornamento campi
+
+        if(img != null && img != undefined){
+            const[rows_exp, field_exp]= await connection.query(query.updateMyImgProfile,[img, idUtente]) //aggiorna img profilo utente
+        }
+
+        
+        res.status(201).json({
+            mess : 'dati aggiornati correttamente'
+        })
+            
+    }
+    catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
+}
+
 /**
  * UPDATE NAME
  * @param {*} req 
@@ -600,6 +651,91 @@ exports.checkPassword = async (req, res, next) => {
     }
 }
 
+
+exports.getCountLike = async (req, res, next) => {
+
+    var idUtente = req.body.id_utente;
+    var promisesArray = [];
+    var like = 0;
+
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    try {  
+        const [rows, field] = await connection.query(query.getEsperienzaByIdUtente, [idUtente]);
+        var experiences = rows;
+        //console.log("*** ", rows)
+        
+        experiences.forEach(async exp => {
+            
+            var p = new Promise(async (resolve, reject) => {
+                const [rows, field] = await connection.query(query.getCountLikeByIdEsperienza, [exp.id_esperienza, 'esperienza']);
+                if(rows[0] != undefined){
+                    resolve(rows[0]);  
+                }
+                else{
+                    resolve(0);  
+                }
+            })
+
+            promisesArray.push(p);
+    });
+    
+    Promise.all(promisesArray).then( (values) => { 
+
+       //     console.log("*** RISULTATO ", values);
+
+        values.forEach( v => {
+            like = like + v.count; //Somma i like ottenuti per ogni esperienza di quell'utente
+        }) 
+
+        res.status(201).json({
+            count_like : like
+        })
+    });
+
+            
+    }
+    catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
+}
+
+
+exports.getCountPost = async (req, res, next) => {
+
+    var idUtente = req.body.id_utente;
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    try {  
+        const [rows, field] = await connection.query(query.getCountPostByIdUser, [idUtente]);
+        var count = rows[0].count;
+        console.log("*** count ", count);
+
+        res.status(201).json({
+            count_post : count
+        })
+            
+    }
+    catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
+}
 
 
 

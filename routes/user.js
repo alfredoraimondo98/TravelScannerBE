@@ -26,6 +26,24 @@ router.post('/updateMyProfile',
             userController.updateMyProfile); //Aggiornamento del profilo utente
 
 
+
+router.post('/updateName', [body('nome').isLength({max : 100}),],userController.updateName);
+router.post('/updateSurname',[ body('cognome').isLength({max : 100})], userController.updateSurname);
+router.post('/updateEmail', [body('email').isEmail().withMessage('Inserisci una mail valida name@server.com'),],userController.updateEmail);
+router.post('/updateEmail', upload.single('img'),userController.updateImgProfile);
+
+router.post('/checkPassword', 
+        [body('password').trim().isLength({ min : 8}).matches('^(?=.*[0-9])(?=.*[a-zA-Z])([a-zA-Z0-9]+){8,255}').withMessage('Inserisci una password valida')],
+        userController.checkPassword); //Verifica la password attuale
+
+router.post('/updatePassword', [
+    body('password').trim().isLength({ min : 8}).matches('^(?=.*[0-9])(?=.*[a-zA-Z])([a-zA-Z0-9]+){8,255}').withMessage('Inserisci una password valida')
+    ],
+    userController.updatePassword)
+
+
+
+
 router.post('/forgottenPassword', userController.forgottenPassword); //procedura di password dimendicata
 router.post('/searchUser',userController.searchUser)
 router.post('/searchAll',userController.serchAll)

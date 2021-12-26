@@ -7,7 +7,7 @@ const service = require('../utils/service');
 var randomstring = require("randomstring");
 const transporter = require('../utils/mail');
 const { param } = require('../routes/user');
-
+ 
 /**
  * Restituisce le foto degli ultimi utenti registrati
  * @param {*} req 
@@ -182,7 +182,13 @@ exports.getMyProfile = async (req, res, next) => {
 
 
 
-
+/**
+ * UPDATE DATI PROFILO
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * @returns 
+ */
 exports.updateMyProfile = async (req, res, next) =>{
 
     const errors = validationResult(req);
@@ -208,8 +214,6 @@ exports.updateMyProfile = async (req, res, next) =>{
     }
 
     const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
-
-    esperienzeDelLuogo = []; 
 
     try {
     
@@ -255,6 +259,346 @@ exports.updateMyProfile = async (req, res, next) =>{
     }
 }
 
+/**
+ * UPDATE NAME
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * @returns 
+ */
+exports.updateName = async (req, res, next) => {
+
+    const errors = validationResult(req);
+
+    if(!errors.isEmpty()){ //verifica parametri sulla base dei controlli inseriti come middleware nella routes
+        return res.status(422).json({
+            message : 'Error input Parametri',
+            error : errors.array()
+        });
+    }
+    
+    var idUtente = req.body.id_utente;
+    var nome = req.body.nome;
+    
+    console.log("*********** ", idUtente, nome)
+
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    try {
+    
+        //Aggiornamento campi
+    
+        if(nome != null && nome != undefined){
+            const[rows_exp, field_exp]= await connection.query(query.updateMyName,[nome, idUtente]) //aggiorna nome utente
+        }
+
+        connection.commit();
+        
+        res.status(201).json({
+            mess : 'dati aggiornati correttamente'
+        })
+            
+    }
+    catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
+}
+
+
+/**
+ * UPDATE SURNAME
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * @returns 
+ */
+exports.updateSurname = async (req, res, next) => {
+    const errors = validationResult(req);
+
+    if(!errors.isEmpty()){ //verifica parametri sulla base dei controlli inseriti come middleware nella routes
+        return res.status(422).json({
+            message : 'Error input Parametri',
+            error : errors.array()
+        });
+    }
+    
+    var idUtente = req.body.id_utente;
+    var cognome = req.body.cognome;
+    
+     
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    try {
+    
+        //Aggiornamento campi
+    
+        if(cognome != null && cognome != undefined){
+            const[rows_exp, field_exp]= await connection.query(query.updateMySurname,[cognome, idUtente]) //aggiorna nome utente
+        }
+        
+        res.status(201).json({
+            mess : 'dati aggiornati correttamente'
+        })
+            
+    }
+    catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
+}
+
+
+
+
+/**
+ * UPDATE EMAIL
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * @returns 
+ */
+ exports.updateEmail = async (req, res, next) => {
+    const errors = validationResult(req);
+
+    if(!errors.isEmpty()){ //verifica parametri sulla base dei controlli inseriti come middleware nella routes
+        return res.status(422).json({
+            message : 'Error input Parametri',
+            error : errors.array()
+        });
+    }
+    
+    var idUtente = req.body.id_utente;
+    var email = req.body.email;
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    try {
+    
+        //Aggiornamento campi
+        if(await verifyMail(email)){ //se la mail è già presente viene restituito TRUE e non si può procedere alla registrazione
+            res.status(401).json({
+                mess : 'email già presente'
+            })
+        }
+        else if(email != null && email != undefined){
+            const[rows_exp, field_exp]= await connection.query(query.updateMyEmail,[email, idUtente]) //aggiorna nome utente
+
+            res.status(201).json({
+                mess : 'dati aggiornati correttamente'
+            })
+        }
+        
+    }
+    catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
+}
+
+/**
+ * verifica se la mail in fase di registrazione è già presente
+ * @param {*} email 
+ * @returns True : mail già presente ; False : mail non presente (può proseguire alla registrazione)
+ */
+ async function verifyMail(email){
+
+    const [rows, field] = await database.query(query.verifyMail, [email]); //verifica se la mail è presente
+    console.log("rows", rows)
+
+    if(rows.length == 0){ //se la risposta non contiene nessun risultato allora la mail non è presente;
+        console.log("*** MAIL NON PRESENTE");
+        return false; //email non presente: può proseguire con la registrazione;
+    }
+    else{
+        return true; //mail già presente: non può procedere alla registrazione
+    }
+}
+
+/**
+ * UPDATE FOTO PROFILO
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * @returns 
+ */
+exports.updateImgProfile = async (req, res, next) =>{
+
+    const errors = validationResult(req);
+
+    if(!errors.isEmpty()){ //verifica parametri sulla base dei controlli inseriti come middleware nella routes
+        return res.status(422).json({
+            message : 'Error input Parametri',
+            error : errors.array()
+        });
+    }
+    
+  
+    var img;
+    if(req.file){
+        img = req.file.path.slice(6)  //recupera path relativo dell'img (in req.file) 
+    }
+    else{
+        img = null;
+    }
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    try {
+    
+        //Aggiornamento campi
+     
+
+        if(img != null && img != undefined){
+            const[rows_exp, field_exp]= await connection.query(query.updateMyImgProfile,[img, idUtente]) //aggiorna img profilo utente
+        }
+
+
+        
+        res.status(201).json({
+            mess : 'dati aggiornati correttamente'
+        })
+            
+    }
+    catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
+}
+
+
+/**
+ * verifica password attuale
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * @returns 
+ */
+exports.checkPassword = async (req, res, next) => {
+
+    const errors = validationResult(req);
+
+    if(!errors.isEmpty()){ //verifica parametri sulla base dei controlli inseriti come middleware nella routes
+        return res.status(422).json({
+            message : 'Error input Parametri',
+            error : errors.array()
+        });
+    }
+    
+    var idUtente = req.body.id_utente;
+    var password = req.body.password;
+    
+    console.log("*** CHECK PASSWORD ", password);
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    try {
+
+        const [rows, field] = await database.query(query.getUserById, [idUtente]);
+        loginUser = rows[0];
+
+
+        //Verifica password
+        if(! (await bcrypt.compare(password, loginUser.password)) ){ //Verifica se le due password non corrispondono
+            return res.status(401).json({
+                message : 'Non autorizzato: password errata!' //nega l'accesso
+            })
+        }
+      
+
+        res.status(201).send(true); //restituisce true se può procedere all'aggiornamento della password
+        
+    }
+    catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
+
+}
+
+
+
+
+/**
+ * UPDATE PASSWORD
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * @returns 
+ */
+ exports.updatePassword = async (req, res, next) => {
+    const errors = validationResult(req);
+
+    if(!errors.isEmpty()){ //verifica parametri sulla base dei controlli inseriti come middleware nella routes
+        return res.status(422).json({
+            message : 'Error input Parametri',
+            error : errors.array()
+        });
+    }
+    
+    var idUtente = req.body.id_utente;
+    var password = await bcrypt.hash(req.body.password, 12);
+
+    console.log("****  PASSWORD DA AGGIORNARE", password);
+    
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    try {
+        //Aggiornamento campi
+    
+        if(password != null && password != undefined){
+            const[rows_exp, field_exp]= await connection.query(query.updateMyPassword,[password, idUtente]) //aggiorna password utente
+        }
+        
+        res.status(201).json({
+            mess : 'dati aggiornati correttamente'
+        })
+            
+    }
+    catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
+}
 
 
 

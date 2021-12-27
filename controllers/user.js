@@ -914,3 +914,29 @@ exports.serchAll = async(req,res,next) => {
 
 
 }
+
+exports.getBadge = async (req,res,next) =>{
+    var idUtente = req.body.id_utente
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+ 
+    await connection.beginTransaction(async function (err) { //avvia una nuova transazione
+        if (err) { throw err; }
+    });
+
+    try {
+        
+        const [rows_badge, field_badge] = await connection.query(query.getBadge,[idUtente]);
+        
+        badge=rows_badge[0].badge
+        
+        res.status(201).json({
+            badge: badge
+        })
+    } catch (error) {
+        res.status(401).json({
+            mess : error
+        })
+    }
+}

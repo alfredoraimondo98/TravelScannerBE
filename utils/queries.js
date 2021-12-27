@@ -192,6 +192,12 @@ module.exports = {
 
     getUserByIdEsperienza : "SELECT id_utente FROM creare_esperienza WHERE id_esperienza = ?",
 
+    getBadge: "SELECT badge FROM utente WHERE id_utente = ? ",
+
+    getCountAmbassadorById: "SELECT count_ambassador FROM utente WHERE id_utente = ?",
+
+    getAmbassadorByLuogo: "SELECT * FROM ambassador WHERE id_luogo = ? AND tipo_ambassador = ?",
+
 
     getLuogoByIdEsperienza : "SELECT id_luogo FROM esperienza WHERE id_esperienza = ?",
 
@@ -231,6 +237,7 @@ module.exports = {
     updateDescrizione: "UPDATE esperienza SET descrizione = ? WHERE id_esperienza = ?",
     updateAccessibilita: "UPDATE esperienza SET accessibilita = ? WHERE id_esperienza = ?",
     updateFotoCopertina: "UPDATE esperienza SET foto_copertina = ? WHERE id_esperienza = ?",
+    updateBadge: "UPDATE utente SET badge = ? WHERE id_utente = ?",
 
 
     updateMyName: "UPDATE utente SET nome = ? WHERE id_utente = ?",

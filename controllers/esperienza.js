@@ -170,40 +170,104 @@ exports.votaFotoCopertina = async (req, res, next)=>{
         const [rows_verify, field_verify]= await connection.query(query.verifyVotoTipo,[idUtente, idEsperienza,"fotoCopertina"])
         if (rows_verify[0]==undefined){
 
-        const [rows_voto, field_voto] = await connection.query(query.insertVoto, [idUtente,idEsperienza,1,"fotoCopertina"]);
-        const [rows_votoFotoCopertina, field_votoFotoCopertina] = await connection.query(query.getNumVotiFotoCopertina, [idEsperienza]);
-        await connection.query(query.updateNumVotiFotoCopertina,[rows_votoFotoCopertina[0].count_foto_copertina + 1, idEsperienza])
+            const [rows_voto, field_voto] = await connection.query(query.insertVoto, [idUtente,idEsperienza,1,"fotoCopertina"]);
+            const [rows_votoFotoCopertina, field_votoFotoCopertina] = await connection.query(query.getNumVotiFotoCopertina, [idEsperienza]);
+            await connection.query(query.updateNumVotiFotoCopertina,[rows_votoFotoCopertina[0].count_foto_copertina + 1, idEsperienza])
 
-        const [rows_utenteDaVotare, field_utenteDaVotare] = await connection.query(query.getUserByIdEsperienza, [idEsperienza]);
-        var idUtenteVotato = rows_utenteDaVotare[0].id_utente; //id dell'utente che riceve il voto
+            const [rows_utenteDaVotare, field_utenteDaVotare] = await connection.query(query.getUserByIdEsperienza, [idEsperienza]);
+            var idUtenteVotato = rows_utenteDaVotare[0].id_utente; //id dell'utente che riceve il voto
 
-        //aggiornamento ambassador
+            //aggiornamento ambassador
+            var votoMyFotoCopertina = rows_votoFotoCopertina[0].count_foto_copertina + 1; //prende il voto della foto copertina che si sta votando
+            const [rows_luogo, field_luogo] = await connection.query(query.getLuogoByIdEsperienza, [idEsperienza]); //recupera il luogo dell'esperienza che si sta votando
+            var luogo = rows_luogo[0]; //si prende il luogo a cui appartiene la foto dell'esperienza che si sta votando 
+
+            const [rows_topCopertina, field_topCopertina] = await connection.query(query.getTopFotoCopertinaByLuogoWithUser, [luogo.id_luogo]);
+            var idTopCopertina = rows_topCopertina[0].id_utente; 
+            var votoTopCopertina= rows_topCopertina[0].countFotoCopertina;
+            //si prenodono l'id dell'utente della copertina più votata e il voto della coperinta più votata
+
+
+            if(idUtenteVotato==idTopCopertina) //Confronto con l'utente più votato e quello votato
+            {
+                const [rows_ambAttuale, field_ambAttuale] = await connection.query(query.getAmbassadorByLuogo, [luogo.id_luogo, 'fotoCopertina']);
+                idAttualeAmbassador= rows_ambAttuale[0].idUtente
+
+                if(idUtenteVotato==idAttualeAmbassador){ //controllo se l'utente votato è gia ambassador, aggiorno solo il voto
+                    await connection.query(query.updateAmbassador, [idUtenteVotato, votoMyFotoCopertina, luogo.id_luogo, 'fotoCopertina']);
+                }
+                else{ //se l'utente votato che è anche quello più votato non è ambassador allora si cambia l'ambassador
+                    await connection.query(query.updateAmbassador, [idUtenteVotato, votoMyFotoCopertina, luogo.id_luogo, 'fotoCopertina']);
+                    await connection.query(query.updateCountAmbassadorByUser, [1, idUtenteVotato]);
+
+                    const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idUtenteVotato]);
+
+                    countAmb= rows_countAmb[0].count_ambassador
+
+                    if(countAmb>=10 && countAmb<24)
+                    {
+                        await connection.query(query.updateBadge, ["Turista moderato",idUtenteVotato]);
+                    }
+                    if(countAmb>=25 && countAmb<49)
+                    {
+                        await connection.query(query.updateBadge, ["Turista avventuroso",idUtenteVotato]);
+                    }
+
+                    if(countAmb>=50 && countAmb<99)
+                    {
+                        await connection.query(query.updateBadge, ["Turista abitudinario",idUtenteVotato]);
+                    }
+
+                    if(countAmb>=100)
+                    {
+                        await connection.query(query.updateBadge, ["Turista elite",idUtenteVotato]);
+                    }
+
+
+                }
+            }
+            else{ // se l'utente votato non è quello votato 
+                if(idTopCopertina==idAttualeAmbassador){ // si contralla se il più votato e l'ambassador sono gli stessi
+                    await connection.query(query.updateAmbassador, [idTopCopertina, votoTopCopertina, luogo.id_luogo, 'fotoGallery']); //si aggiorna il voto
+                }
+                else{ // si cambia l'ambassador 
+                    await connection.query(query.updateAmbassador, [idTopCopertina, votoTopCopertina, luogo.id_luogo, 'fotoGallery']);
+                    await connection.query(query.updateCountAmbassadorByUser, [1, idTopGallery]);
+                    
+                    const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopCopertina]);
+
+                    countAmb= rows_countAmb[0].count_ambassador
+
+                    if(countAmb>=10 && countAmb<24)
+                    {
+                        await connection.query(query.updateBadge, ["Turista moderato",idTopCopertina]);
+                    }
+                    if(countAmb>=25 && countAmb<49)
+                    {
+                        await connection.query(query.updateBadge, ["Turista avventuroso",idTopCopertina]);
+                    }
+
+                    if(countAmb>=50 && countAmb<99)
+                    {
+                        await connection.query(query.updateBadge, ["Turista abitudinario",idTopCopertina]);
+                    }
+
+                    if(countAmb>=100)
+                    {
+                        await connection.query(query.updateBadge, ["Turista elite",idTopCopertina]);
+                    }
+
+                }
+                
+            }
+            
+
+            await connection.commit(); //effettua il commit delle transazioni
         
-        var votoMyFotoCopertina = rows_votoFotoCopertina[0].count_foto_copertina + 1; 
-        
-        const [rows_luogo, field_luogo] = await connection.query(query.getLuogoByIdEsperienza, [idEsperienza]); //recupera il luogo dell'esperienza che si sta votando
-        var luogo = rows_luogo[0];
-
-        const [rows_ambVoto, field_ambVoto] = await connection.query(query.getCountVotoAmbassadorByLuogo, [luogo.id_luogo, 'fotoCopertina']);
-        const [rows_topCopertina, field_topCopertina] = await connection.query(query.getTopFotoCopertinaByLuogoWithUser, [luogo.id_luogo]);
-        var idTopCopertina = rows_topCopertina[0].id_utente; 
-
-        if(idUtenteVotato==idTopCopertina)
-        {
-            await connection.query(query.updateAmbassador, [idUtenteVotato, votoMyFotoCopertina, luogo.id_luogo, 'fotoCopertina']); //incremento il voto dell'ambassador
+            res.status(201).json({
+                mess : 'voto inserito'
+            })
         }
-        //confronto voto con l'ambassador 
-        if(votoMyFotoCopertina > rows_ambVoto[0].count_voto){
-            await connection.query(query.updateAmbassador, [idUtenteVotato, votoMyFotoCopertina, luogo.id_luogo, 'fotoCopertina']); //l'utente appena votato diventa ambassador
-            await connection.query(query.updateCountAmbassadorByUser, [1, idUtenteVotato]); //aggiornamento count ambassador in 'utente'
-        }
-
-        await connection.commit(); //effettua il commit delle transazioni
-    
-        res.status(201).json({
-            mess : 'voto inserito'
-        })
-    }
         else
         {
             const [rows_voto, field_voto] = await connection.query(query.deleteVoto, [idUtente,idEsperienza, "fotoCopertina"]);
@@ -223,6 +287,8 @@ exports.votaFotoCopertina = async (req, res, next)=>{
             const [rows_ambVoto, field_ambVoto] = await connection.query(query.getCountVotoAmbassadorByLuogo, [luogo.id_luogo, 'fotoCopertina']);
 
             const [rows_topCopertina, field_topCopertina] = await connection.query(query.getTopFotoCopertinaByLuogoWithUser, [luogo.id_luogo]);
+            
+            
             var idTopCopertina = rows_topCopertina[0].id_utente; 
             var votoTopCopertina =rows_topCopertina[0].count_foto_copertina;
 
@@ -230,6 +296,29 @@ exports.votaFotoCopertina = async (req, res, next)=>{
             if(idTopCopertina!=idUtenteVotato){
                 await connection.query(query.updateAmbassador, [idTopCopertina, votoTopCopertina , luogo.id_luogo, 'fotoCopertina']); //l'utente appena votato diventa ambassador
                 await connection.query(query.updateCountAmbassadorByUser, [1, idTopCopertina]);
+
+                const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopCopertina]);
+
+                countAmb= rows_countAmb[0].count_ambassador
+
+                if(countAmb>=10 && countAmb<24)
+                {
+                    await connection.query(query.updateBadge, ["Turista moderato",idTopCopertina]);
+                }
+                if(countAmb>=25 && countAmb<49)
+                {
+                    await connection.query(query.updateBadge, ["Turista avventuroso",idTopCopertina]);
+                }
+
+                if(countAmb>=50 && countAmb<99)
+                {
+                    await connection.query(query.updateBadge, ["Turista abitudinario",idTopCopertina]);
+                }
+
+                if(countAmb>=100)
+                {
+                    await connection.query(query.updateBadge, ["Turista elite",idTopCopertina]);
+                }
                 
             }
             else{
@@ -297,16 +386,87 @@ exports.votaFotoGallery = async (req, res, next)=>{
         
         const [rows_idTopGallery, field_idTopGallery] = await connection.query(query.getUserByIdEsperienza, [rows_topGallery[0].id_esperienza]); //prende l'id dell'utente della gallery che si sta votando
         
-        idTopGallery=rows_idTopGallery[0].id_utente
+        var idTopGallery=rows_idTopGallery[0].id_utente
+        var votoTopFotoGallery=rows_topGallery[0].count_gallery
+
+        const [rows_ambAttuale, field_ambAttuale] = await connection.query(query.getAmbassadorByLuogo, [luogo.id_luogo, 'fotoGallery']);
+
+        idAttualeAmbassador= rows_ambAttuale[0].idUtente
 
         if(idUtenteVotato==idTopGallery) //incrementa il voto della fotoGallery del più votato
         {
-            await connection.query(query.updateAmbassador, [idUtenteVotato, votoMyFotoGallery, luogo.id_luogo, 'fotoGallery']); //incremento il voto dell'ambassador
+            
+
+            if(idUtenteVotato == idAttualeAmbassador){
+                await connection.query(query.updateAmbassador, [idUtenteVotato, votoMyFotoGallery, luogo.id_luogo, 'fotoGallery']);
+            }
+            else{
+                await connection.query(query.updateAmbassador, [idUtenteVotato, votoMyFotoGallery, luogo.id_luogo, 'fotoGallery']);
+                await connection.query(query.updateCountAmbassadorByUser, [1, idUtenteVotato]);
+                
+                const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idUtenteVotato]);
+
+                countAmb= rows_countAmb[0].count_ambassador
+
+                if(countAmb>=10 && countAmb<24)
+                {
+                    await connection.query(query.updateBadge, ["Turista moderato",idUtenteVotato]);
+                }
+                if(countAmb>=25 && countAmb<49)
+                {
+                    await connection.query(query.updateBadge, ["Turista avventuroso",idUtenteVotato]);
+                }
+
+                if(countAmb>=50 && countAmb<99)
+                {
+                    await connection.query(query.updateBadge, ["Turista abitudinario",idUtenteVotato]);
+                }
+
+                if(countAmb>=100)
+                {
+                    await connection.query(query.updateBadge, ["Turista elite",idUtenteVotato]);
+                }
+
+
+            }
+
+        
+
         }
-        //confronto voto con l'ambassador 
-        if(votoMyFotoGallery > rows_ambVoto[0].count_voto){
-            await connection.query(query.updateAmbassador, [idUtenteVotato, votoMyFotoGallery, luogo.id_luogo, 'fotoGallery']); //l'utente appena votato diventa ambassador
-            await connection.query(query.updateCountAmbassadorByUser, [1, idUtenteVotato]); //aggiornamento count ambassador in 'utente'
+
+        else{
+            if(idTopGallery==idAttualeAmbassador){
+                await connection.query(query.updateAmbassador, [idTopGallery, votoTopFotoGallery, luogo.id_luogo, 'fotoGallery']);
+            }
+            else{
+                await connection.query(query.updateAmbassador, [idTopGallery, votoTopFotoGallery, luogo.id_luogo, 'fotoGallery']);
+                await connection.query(query.updateCountAmbassadorByUser, [1, idTopGallery]);
+                
+                const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopGallery]);
+
+                countAmb= rows_countAmb[0].count_ambassador
+
+                if(countAmb>=10 && countAmb<24)
+                {
+                    await connection.query(query.updateBadge, ["Turista moderato",idTopGallery]);
+                }
+                if(countAmb>=25 && countAmb<49)
+                {
+                    await connection.query(query.updateBadge, ["Turista avventuroso",idTopGallery]);
+                }
+
+                if(countAmb>=50 && countAmb<99)
+                {
+                    await connection.query(query.updateBadge, ["Turista abitudinario",idTopGallery]);
+                }
+
+                if(countAmb>=100)
+                {
+                    await connection.query(query.updateBadge, ["Turista elite",idTopGallery]);
+                }
+
+            }
+            
         }
         
         await connection.commit(); //effettua il commit delle transazioni
@@ -339,23 +499,83 @@ exports.votaFotoGallery = async (req, res, next)=>{
             var idTopGallery=rows_idTopGallery[0].id_utente
             var votoTopFotoGallery=rows_topGallery[0].count_gallery
 
-            console.log(votoTopFotoGallery)
+            const [rows_ambAttuale, field_ambAttuale] = await connection.query(query.getAmbassadorByLuogo, [luogo.id_luogo, 'fotoGallery']);
+            idAttualeAmbassador= rows_ambAttuale[0].idUtente
     
             if(idTopGallery!=idUtenteVotato){
-                await connection.query(query.updateAmbassador, [idTopGallery, votoTopFotoGallery , luogo.id_luogo, 'fotoGallery']); //l'utente appena votato diventa ambassador
-                await connection.query(query.updateCountAmbassadorByUser, [1, idTopCopertina]);
                 
+
+                if(idAttualeAmbassador == idUtenteVotato)
+                {
+                    await connection.query(query.updateAmbassador, [idTopGallery, votoTopFotoGallery , luogo.id_luogo, 'fotoGallery']); //l'utente appena votato diventa ambassador
+                    await connection.query(query.updateCountAmbassadorByUser, [1, idTopGallery]);
+
+                    const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopGallery]);
+
+                    countAmb= rows_countAmb[0].count_ambassador
+
+                    if(countAmb>=10 && countAmb<24)
+                    {
+                        await connection.query(query.updateBadge, ["Turista moderato",idTopGallery]);
+                    }
+                    if(countAmb>=25 && countAmb<49)
+                    {
+                        await connection.query(query.updateBadge, ["Turista avventuroso",idTopGallery]);
+                    }
+
+                    if(countAmb>=50 && countAmb<99)
+                    {
+                        await connection.query(query.updateBadge, ["Turista abitudinario",idTopGallery]);
+                    }
+
+                    if(countAmb>=100)
+                    {
+                        await connection.query(query.updateBadge, ["Turista elite",idTopGallery]);
+                    }
+                }
             }
             else{
-                await connection.query(query.updateAmbassador, [idTopGallery, votoTopFotoGallery, luogo.id_luogo, 'fotoGallery']); //l'utente appena votato diventa ambassador 
+                if(idAttualeAmbassador != idUtenteVotato)
+                {
+                    await connection.query(query.updateAmbassador, [idTopGallery, votoTopFotoGallery, luogo.id_luogo, 'fotoGallery']); //l'utente appena votato diventa ambassador
+                    await connection.query(query.updateCountAmbassadorByUser, [1, idTopGallery]);
+
+                    const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopGallery]);
+
+                    countAmb= rows_countAmb[0].count_ambassador
+
+                    if(countAmb>=10 && countAmb<24)
+                    {
+                        await connection.query(query.updateBadge, ["Turista moderato",idTopGallery]);
+                    }
+                    if(countAmb>=25 && countAmb<49)
+                    {
+                        await connection.query(query.updateBadge, ["Turista avventuroso",idTopGallery]);
+                    }
+
+                    if(countAmb>=50 && countAmb<99)
+                    {
+                        await connection.query(query.updateBadge, ["Turista abitudinario",idTopGallery]);
+                    }
+
+                    if(countAmb>=100)
+                    {
+                        await connection.query(query.updateBadge, ["Turista elite",idTopGallery]);
+                    }
+                }
+                else{
+                    await connection.query(query.updateAmbassador, [idTopGallery, votoTopFotoGallery, luogo.id_luogo, 'fotoGallery']);
+                }
+                
             }
             
             await connection.commit();
+            res.status(201).json({
+                mess: "voto cancellato"
+            })
         }   
 
-        res.status(201).json({
-            mess: "voto cancellato"
-        })
+        
         
     }
     catch(err){ //se si verifica un errore 
@@ -414,23 +634,77 @@ exports.votaDescrizione = async (req, res, next)=>{
             const [rows_topDescrizione, field_topDescrizione] = await connection.query(query.getTopDescrizioneByLuogoWithUser, [luogo.id_luogo]);
             var idTopDescrizione=rows_topDescrizione[0].id_utente
             var votoTopDescrizione= rows_topDescrizione[0].count_descrizione
+
+            const [rows_ambAttuale, field_ambAttuale] = await connection.query(query.getAmbassadorByLuogo, [luogo.id_luogo, 'descrizione']);
+            idAttualeAmbassador= rows_ambAttuale[0].id_utente
             
             
             if(idTopDescrizione!=idUtenteVotato){
-                await connection.query(query.updateAmbassador, [idTopDescrizione, votoTopDescrizione , luogo.id_luogo, 'descrizione']); //l'utente appena votato diventa ambassador
-                await connection.query(query.updateCountAmbassadorByUser, [1, idTopDescrizione]);
+                if(idUtenteVotato == idAttualeAmbassador){
+                    await connection.query(query.updateAmbassador, [idTopDescrizione, votoTopDescrizione , luogo.id_luogo, 'descrizione']); //l'utente appena votato diventa ambassador
+                    await connection.query(query.updateCountAmbassadorByUser, [1, idTopDescrizione])
+
+                    const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopDescrizione]);
+                    countAmb= rows_countAmb[0].count_ambassador
+
+                    if(countAmb>=10 && countAmb<24)
+                    {
+                        await connection.query(query.updateBadge, ["Turista moderato",idTopDescrizione]);
+                    }
+                    if(countAmb>=25 && countAmb<49)
+                    {
+                        await connection.query(query.updateBadge, ["Turista avventuroso",idTopDescrizione]);
+                    }
+
+                    if(countAmb>=50 && countAmb<99)
+                    {
+                        await connection.query(query.updateBadge, ["Turista abitudinario",idTopDescrizione]);
+                    }
+
+                    if(countAmb>=100)
+                    {
+                        await connection.query(query.updateBadge, ["Turista elite",idTopDescrizione]);
+                    }
+
+                }
+                
                 
             }
             else{
-                await connection.query(query.updateAmbassador, [idTopDescrizione, votoTopDescrizione, luogo.id_luogo, 'descrizione']); //l'utente appena votato diventa ambassador 
+                if(idTopDescrizione == idAttualeAmbassador ){
+                    await connection.query(query.updateAmbassador, [idTopDescrizione, votoTopDescrizione, luogo.id_luogo, 'descrizione']); 
+                }
+                else{
+                    await connection.query(query.updateAmbassador, [idTopDescrizione, votoTopDescrizione, luogo.id_luogo, 'descrizione']); 
+                    await connection.query(query.updateCountAmbassadorByUser, [1, idTopDescrizione]);
+
+                    const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopDescrizione]);
+                    countAmb= rows_countAmb[0].count_ambassador
+
+                    if(countAmb>=10 && countAmb<24)
+                    {
+                        await connection.query(query.updateBadge, ["Turista moderato",idTopDescrizione]);
+                    }
+                    if(countAmb>=25 && countAmb<49)
+                    {
+                        await connection.query(query.updateBadge, ["Turista avventuroso",idTopDescrizione]);
+                    }
+
+                    if(countAmb>=50 && countAmb<99)
+                    {
+                        await connection.query(query.updateBadge, ["Turista abitudinario",idTopDescrizione]);
+                    }
+
+                    if(countAmb>=100)
+                    {
+                        await connection.query(query.updateBadge, ["Turista elite",idTopDescrizione]);
+                    }
+
+                }
+               
             }
 
             //FINE BLOCCO DI AMBASSADOR
-
-
-
-            
-            console.log("********** TOTALE (PRIMO VOTO) ", sommaVoti, countTotalDescrizione);
             
             await connection.commit(); //effettua il commit delle transazioni
 
@@ -440,7 +714,7 @@ exports.votaDescrizione = async (req, res, next)=>{
                 count_total_descrizione : countTotalDescrizione
             })
         }
-        else{
+        else{ // aggiornamento del voto
             
             //BLOCCO VOTAZIONE
             await connection.query(query.updateVoto,[votoDescrizione,idEsperienza,idUtente,"descrizione"])
@@ -469,24 +743,80 @@ exports.votaDescrizione = async (req, res, next)=>{
             var idTopDescrizione=rows_topDescrizione[0].id_utente
             var votoTopDescrizione= rows_topDescrizione[0].count_descrizione
             
+            console.log(luogo.id_luogo)
+            const [rows_ambAttuale, field_ambAttuale] = await connection.query(query.getAmbassadorByLuogo, [luogo.id_luogo, 'descrizione']);
+            idAttualeAmbassador= rows_ambAttuale[0].id_utente
+            
             
             if(idTopDescrizione!=idUtenteVotato){
-                await connection.query(query.updateAmbassador, [idTopDescrizione, votoTopDescrizione , luogo.id_luogo, 'descrizione']); //l'utente appena votato diventa ambassador
-                await connection.query(query.updateCountAmbassadorByUser, [1, idTopDescrizione]);
+                
+                console.log("idTop",idTopDescrizione,"votoTop",votoTopDescrizione, "idVotato",idUtenteVotato, "idAmbassador",idAttualeAmbassador)
+                if(idUtenteVotato == idAttualeAmbassador){
+                    await connection.query(query.updateAmbassador, [idTopDescrizione, votoTopDescrizione , luogo.id_luogo, 'descrizione']); //l'utente appena votato diventa ambassador
+                    await connection.query(query.updateCountAmbassadorByUser, [1, idTopDescrizione])
+
+                    const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopDescrizione]);
+                    countAmb= rows_countAmb[0].count_ambassador
+
+                    if(countAmb>=10 && countAmb<24)
+                    {
+                        await connection.query(query.updateBadge, ["Turista moderato",idTopDescrizione]);
+                    }
+                    if(countAmb>=25 && countAmb<49)
+                    {
+                        await connection.query(query.updateBadge, ["Turista avventuroso",idTopDescrizione]);
+                    }
+
+                    if(countAmb>=50 && countAmb<99)
+                    {
+                        await connection.query(query.updateBadge, ["Turista abitudinario",idTopDescrizione]);
+                    }
+
+                    if(countAmb>=100)
+                    {
+                        await connection.query(query.updateBadge, ["Turista elite",idTopDescrizione]);
+                    }
+
+                }
+                
                 
             }
             else{
-                console.log(mediaVoti)
-                await connection.query(query.updateAmbassador, [idTopDescrizione, mediaVoti, luogo.id_luogo, 'descrizione']); //l'utente appena votato diventa ambassador 
+                if(idTopDescrizione == idAttualeAmbassador ){
+                    await connection.query(query.updateAmbassador, [idTopDescrizione, votoTopDescrizione, luogo.id_luogo, 'descrizione']); 
+                }
+                else{
+                    await connection.query(query.updateAmbassador, [idTopDescrizione, votoTopDescrizione, luogo.id_luogo, 'descrizione']); 
+                    await connection.query(query.updateCountAmbassadorByUser, [1, idTopDescrizione]);
+
+                    const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopDescrizione]);
+                    countAmb= rows_countAmb[0].count_ambassador
+
+                    if(countAmb>=10 && countAmb<24)
+                    {
+                        await connection.query(query.updateBadge, ["Turista moderato",idTopDescrizione]);
+                    }
+                    if(countAmb>=25 && countAmb<49)
+                    {
+                        await connection.query(query.updateBadge, ["Turista avventuroso",idTopDescrizione]);
+                    }
+
+                    if(countAmb>=50 && countAmb<99)
+                    {
+                        await connection.query(query.updateBadge, ["Turista abitudinario",idTopDescrizione]);
+                    }
+
+                    if(countAmb>=100)
+                    {
+                        await connection.query(query.updateBadge, ["Turista elite",idTopDescrizione]);
+                    }
+
+                }
+               
             }
 
-
-            //BLOCCO AMBASSADOR
-
-            //FINE BLOCCO AMBASSADOR
-            console.log("********** TOTALE ", mediaVoti, countTotalDescrizione);
-
             await connection.commit();
+
             res.status(201).json({
                 mess : 'voto aggiornato',
                 count_descrizione : mediaVoti,
@@ -510,8 +840,7 @@ exports.votaDescrizione = async (req, res, next)=>{
 
 
 exports.votaAccessibilita = async (req, res, next)=>{
-
-    console.log("********************************")
+    console.log("eueue")
     var idEsperienza= req.body.id_esperienza
     var idUtente= req.body.id_utente
     var votoAccessibilita= req.body.voto_accessibilita
@@ -555,13 +884,73 @@ exports.votaAccessibilita = async (req, res, next)=>{
             var votoTopAccessibilita= rows_topAccessibilita[0].count_accessibilita
 
             
+            const [rows_ambAttuale, field_ambAttuale] = await connection.query(query.getAmbassadorByLuogo, [luogo.id_luogo, 'accessibilita']);
+            idAttualeAmbassador= rows_ambAttuale[0].id_utente
+            
+            
             if(idTopAccessibilita!=idUtenteVotato){
-                await connection.query(query.updateAmbassador, [idTopAccessibilita, votoTopAccessibilita , luogo.id_luogo, 'accessibilita']); //l'utente appena votato diventa ambassador
-                await connection.query(query.updateCountAmbassadorByUser, [1, idTopAccessibilita]);
+                if(idUtenteVotato == idAttualeAmbassador){
+                    await connection.query(query.updateAmbassador, [idTopAccessibilita, votoTopAccessibilita , luogo.id_luogo, 'accessibilita']); //l'utente appena votato diventa ambassador
+                    await connection.query(query.updateCountAmbassadorByUser, [1, idTopAccessibilita])
+
+                    const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopAccessibilita]);
+                    countAmb= rows_countAmb[0].count_ambassador
+
+                    if(countAmb>=10 && countAmb<24)
+                    {
+                        await connection.query(query.updateBadge, ["Turista moderato",idTopAccessibilita]);
+                    }
+                    if(countAmb>=25 && countAmb<49)
+                    {
+                        await connection.query(query.updateBadge, ["Turista avventuroso",idTopAccessibilita]);
+                    }
+
+                    if(countAmb>=50 && countAmb<99)
+                    {
+                        await connection.query(query.updateBadge, ["Turista abitudinario",idTopAccessibilita]);
+                    }
+
+                    if(countAmb>=100)
+                    {
+                        await connection.query(query.updateBadge, ["Turista elite",idTopAccessibilita]);
+                    }
+
+                }
+                
                 
             }
             else{
-                await connection.query(query.updateAmbassador, [idTopAccessibilita, mediaVoti, luogo.id_luogo, 'accessibilita']); //l'utente appena votato diventa ambassador 
+                if(idTopAccessibilita == idAttualeAmbassador ){
+                    await connection.query(query.updateAmbassador, [idTopAccessibilita, votoTopAccessibilita, luogo.id_luogo, 'accessibilita']); 
+                }
+                else{
+                    await connection.query(query.updateAmbassador, [idTopAccessibilita, votoTopAccessibilita, luogo.id_luogo, 'accessibilita']); 
+                    await connection.query(query.updateCountAmbassadorByUser, [1, idTopAccessibilita]);
+
+                    const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopAccessibilita]);
+                    countAmb= rows_countAmb[0].count_ambassador
+
+                    if(countAmb>=10 && countAmb<24)
+                    {
+                        await connection.query(query.updateBadge, ["Turista moderato",idTopAccessibilita]);
+                    }
+                    if(countAmb>=25 && countAmb<49)
+                    {
+                        await connection.query(query.updateBadge, ["Turista avventuroso",idTopAccessibilita]);
+                    }
+
+                    if(countAmb>=50 && countAmb<99)
+                    {
+                        await connection.query(query.updateBadge, ["Turista abitudinario",idTopAccessibilita]);
+                    }
+
+                    if(countAmb>=100)
+                    {
+                        await connection.query(query.updateBadge, ["Turista elite",idTopAccessibilita]);
+                    }
+
+                }
+               
             }
 
             //FINE BLOCCO AMBASSADOR
@@ -601,15 +990,75 @@ exports.votaAccessibilita = async (req, res, next)=>{
             var votoTopAccessibilita= rows_topAccessibilita[0].count_accessibilita
 
             
+            const [rows_ambAttuale, field_ambAttuale] = await connection.query(query.getAmbassadorByLuogo, [luogo.id_luogo, 'accessibilita']);
+            idAttualeAmbassador= rows_ambAttuale[0].id_utente
+            
+            
             if(idTopAccessibilita!=idUtenteVotato){
-                await connection.query(query.updateAmbassador, [idTopAccessibilita, votoTopAccessibilita , luogo.id_luogo, 'accessibilita']); //l'utente appena votato diventa ambassador
-                await connection.query(query.updateCountAmbassadorByUser, [1, idTopAccessibilita]);
+                if(idUtenteVotato == idAttualeAmbassador){
+                    await connection.query(query.updateAmbassador, [idTopAccessibilita, votoTopAccessibilita , luogo.id_luogo, 'accessibilita']); //l'utente appena votato diventa ambassador
+                    await connection.query(query.updateCountAmbassadorByUser, [1, idTopAccessibilita])
+
+                    const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopAccessibilita]);
+                    countAmb= rows_countAmb[0].count_ambassador
+
+                    if(countAmb>=10 && countAmb<24)
+                    {
+                        await connection.query(query.updateBadge, ["Turista moderato",idTopAccessibilita]);
+                    }
+                    if(countAmb>=25 && countAmb<49)
+                    {
+                        await connection.query(query.updateBadge, ["Turista avventuroso",idTopAccessibilita]);
+                    }
+
+                    if(countAmb>=50 && countAmb<99)
+                    {
+                        await connection.query(query.updateBadge, ["Turista abitudinario",idTopAccessibilita]);
+                    }
+
+                    if(countAmb>=100)
+                    {
+                        await connection.query(query.updateBadge, ["Turista elite",idTopAccessibilita]);
+                    }
+
+                }
+                
                 
             }
             else{
-                await connection.query(query.updateAmbassador, [idTopAccessibilita, mediaVoti, luogo.id_luogo, 'accessibilita']); //l'utente appena votato diventa ambassador 
+                if(idTopAccessibilita == idAttualeAmbassador ){
+                    await connection.query(query.updateAmbassador, [idTopAccessibilita, votoTopAccessibilita, luogo.id_luogo, 'accessibilita']); 
+                }
+                else{
+                    await connection.query(query.updateAmbassador, [idTopAccessibilita, votoTopAccessibilita, luogo.id_luogo, 'accessibilita']); 
+                    await connection.query(query.updateCountAmbassadorByUser, [1, idTopAccessibilita]);
+
+                    const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopAccessibilita]);
+                    countAmb= rows_countAmb[0].count_ambassador
+
+                    if(countAmb>=10 && countAmb<24)
+                    {
+                        await connection.query(query.updateBadge, ["Turista moderato",idTopAccessibilita]);
+                    }
+                    if(countAmb>=25 && countAmb<49)
+                    {
+                        await connection.query(query.updateBadge, ["Turista avventuroso",idTopAccessibilita]);
+                    }
+
+                    if(countAmb>=50 && countAmb<99)
+                    {
+                        await connection.query(query.updateBadge, ["Turista abitudinario",idTopAccessibilita]);
+                    }
+
+                    if(countAmb>=100)
+                    {
+                        await connection.query(query.updateBadge, ["Turista elite",idTopAccessibilita]);
+                    }
+
+                }
+               
             }
-             
+
 
             //FINE BLOCCO AMBASSADOR
 

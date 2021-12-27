@@ -7,7 +7,7 @@ const esperienzaController = require("../controllers/esperienza");
 
 router.post('/createEsperienza',
 //upload.single('fotoCopertina'),
-upload.array('fotoGallery',2),
+upload.array('images',5),
 [
 
 ]

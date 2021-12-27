@@ -4,6 +4,7 @@ const {format} = require('date-format-parse')
 const { validationResult } = require('express-validator');
 const query = require('../utils/queries')
 const service = require('../utils/service');
+const { parse } = require('date-format-parse');
 
 
 /**
@@ -44,6 +45,8 @@ exports.createPlace = async (req, res, next) =>{
     var fotoCopertina;
     var arrayGallery = [];
 
+
+    console.log("********* IMAGES ", req.files);
     if(req.files[0]){
         fotoCopertina = req.files[0].path.slice(6)  //recupera path relativo dell'img (in req.file) 
         fotoCopertina = fotoCopertina.replace(/\\/g, "/");

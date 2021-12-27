@@ -22,8 +22,11 @@ exports.createEsperienza = async (req, res, next)=>{
     
     var accessibilita = req.body.accessibilita
     var descrizione= req.body.descrizione
-    var idUtente= req.body.idUtente
-    var idLuogo= req.body.idLuogo
+    var idUtente= req.body.id_utente
+    var idLuogo= req.body.id_luogo
+
+
+    console.log("*** idutente, idluogo", idUtente, idLuogo);
     
 
     var countDescrizione=0
@@ -50,7 +53,7 @@ exports.createEsperienza = async (req, res, next)=>{
 
     try{
         const [rows_esperienza, field_esperienza] = await connection.query(query.insertEsperienza, [descrizione, countDescrizione,fotoCopertina,countFotoCopertina,
-            accessibilita, countAccessibilita,idUtente,dataCreazione,idLuogo]);
+            accessibilita, countAccessibilita, idLuogo]);
 
         
 

@@ -940,3 +940,57 @@ exports.getBadge = async (req,res,next) =>{
         })
     }
 }
+
+exports.getMostLikeUser = async (req,res,next)=>{
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+    promisesArray=[]
+
+    await connection.beginTransaction(async function (err) { //avvia una nuova transazione
+        if (err) { throw err; }
+    });
+
+    try {
+        [utenti,field_user]= await connection.query(query.getAllUser,[]);
+
+        utenti.forEach(async user => {
+            
+            var p = new Promise(async (resolve, reject) => {
+                
+                
+                const [rows, field] = await connection.query(query.getCountLikeByUser, [user.id_utente]);
+                if(rows[0] != undefined){
+                    
+                    
+                    resolve({utente: user,
+                             somma_voti_esperienze : rows[0].somma_voti_esperienze});  
+                }
+                else{
+                    resolve(0);  
+                }
+            })
+
+            promisesArray.push(p);
+        });
+    
+        Promise.all(promisesArray).then( (values) => { 
+        
+        
+            values.sort((a,b)=>{
+                return b.somma_voti_esperienze - a.somma_voti_esperienze
+
+                
+            })
+            res.status(201).json({
+                classifica : values
+            })
+            
+        });
+        
+        
+        
+    } catch (error) {
+        res.status(401).json({
+            mess : error
+        })
+    }
+}

@@ -655,46 +655,16 @@ exports.checkPassword = async (req, res, next) => {
 exports.getCountLike = async (req, res, next) => {
 
     var idUtente = req.body.id_utente;
-    var promisesArray = [];
-    var like = 0;
-
+    
 
     const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
 
     try {  
-        const [rows, field] = await connection.query(query.getEsperienzaByIdUtente, [idUtente]);
-        var experiences = rows;
-        //console.log("*** ", rows)
         
-        experiences.forEach(async exp => {
-            
-            var p = new Promise(async (resolve, reject) => {
-                const [rows, field] = await connection.query(query.getCountLikeByIdEsperienza, [exp.id_esperienza, 'esperienza']);
-                if(rows[0] != undefined){
-                    resolve(rows[0]);  
-                }
-                else{
-                    resolve(0);  
-                }
-            })
-
-            promisesArray.push(p);
-    });
-    
-    Promise.all(promisesArray).then( (values) => { 
-
-       //     console.log("*** RISULTATO ", values);
-
-        values.forEach( v => {
-            like = like + v.count; //Somma i like ottenuti per ogni esperienza di quell'utente
-        }) 
-
+        const [rows, field] = await connection.query(query.getCountLikeByUser, [idUtente]);
         res.status(201).json({
-            count_like : like
-        })
-    });
-
-            
+            count_like : rows[0].somma_voti_esperienze
+        })     
     }
     catch(err){ //se si verifica un errore 
         console.log("err " , err);

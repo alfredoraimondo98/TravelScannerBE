@@ -982,6 +982,7 @@ exports.searchUser = async(req,res,next) =>{
 }
 
 exports.serchAll = async(req,res,next) => {
+
     parametro_ricerca=req.body.parametro_ricerca+"%";
 
     const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
@@ -996,19 +997,61 @@ exports.serchAll = async(req,res,next) => {
         const [rows_user, field_user] = await connection.query(query.getUserByNameSurname,[parametro_ricerca,parametro_ricerca]);
 
         const [rows_place, field_place] = await connection.query(query.getPlaceByTitle,[parametro_ricerca]);
-        
+
+    
         
         bodyRes={}
         
+        //Aggiornamento img utente
+        rows_user.forEach(user => {
+            user.img = service.server+user.img;
+        })
 
-       
-        bodyRes.user=rows_user
         
+
+        // Recupera informazioni per la fotoCopertina più votata dell'esperienza
+        var promisesArray = [];
+        rows_place.forEach(async place => {
+            
+                var p = new Promise(async (resolve, reject) => {
+                    const [rows_fotoCopertina, field_fotoCopertina] = await connection.query(query.getTopFotoCopertinaByLuogoWithUser, [place.id_luogo]); //recupera la miglior fotoCopertina
+                    if(rows_fotoCopertina[0] != undefined){
+                        resolve(rows_fotoCopertina[0]);  
+                    }
+                    else{
+                        resolve(null);  
+                    }
+                })
+
+                promisesArray.push(p);
+        });
+
         
-        
-        bodyRes.place=rows_place
-        
-        res.status(201).json(bodyRes)
+        Promise.all(promisesArray).then( (values) => {
+
+            for(let i = 0; i < rows_place.length; i++){
+                //console.log("******  FOTO COPERTINA ", values[i]);
+
+                if(values[i] != null){
+                    rows_place[i].foto_copertina = service.server + values[i].foto_copertina;
+                }
+                else{
+                    rows_place[i].foto_copertina = service.server + '/images/default_place.jpeg'
+                }
+
+            }
+
+            
+                bodyRes.user=rows_user
+                
+                bodyRes.place=rows_place
+
+                //console.log("***", bodyRes);
+                
+                res.status(201).json(bodyRes)
+        })
+
+
         
     } catch (error) {
         res.status(401).json({

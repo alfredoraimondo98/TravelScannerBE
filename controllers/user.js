@@ -1084,9 +1084,13 @@ exports.getMostLikeUser = async (req,res,next)=>{
         
             values.sort((a,b)=>{
                 return b.somma_voti_esperienze - a.somma_voti_esperienze
-
-                
             })
+
+            values.forEach( user => {
+                user.utente.img = service.server+user.utente.img; //immagine utente con indirizzo server 
+            })
+
+
             res.status(201).json({
                 classifica : values
             })

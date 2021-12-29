@@ -267,6 +267,8 @@ module.exports = {
     updateAccessibilita: "UPDATE esperienza SET accessibilita = ? WHERE id_esperienza = ?",
     updateFotoCopertina: "UPDATE esperienza SET foto_copertina = ? WHERE id_esperienza = ?",
     updateBadge: "UPDATE utente SET badge = ? WHERE id_utente = ?",
+    updateDataCreazione: "UPDATE creare_esperienza SET data_creazione = ? WHERE id_utente = ? AND id_esperienza = ?",
+
 
 
     updateMyName: "UPDATE utente SET nome = ? WHERE id_utente = ?",

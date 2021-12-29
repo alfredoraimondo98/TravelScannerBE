@@ -2037,7 +2037,7 @@ exports.getVotoEffettuatoEsperienza = async(req,res,next)=>{
 
 
 exports.updateEsperienza = async(req,res,next)=>{
-
+    var idUtente = req.body.id_utente;
     var idEsperienza= req.body.id_esperienza;
     var descrizione=req.body.descrizione;
     var accessibilita= req.body.accessibilita
@@ -2064,7 +2064,10 @@ exports.updateEsperienza = async(req,res,next)=>{
     });
 
     try {
+        var dataCreazione = format(new Date(), 'YYYY-MM-DD');
+        const [rows, field] = await connection.query(queries.updateDataCreazione, [dataCreazione, idUtente, idEsperienza]);
         
+
         if(descrizione!=null) 
         {
 
@@ -2104,9 +2107,6 @@ exports.updateEsperienza = async(req,res,next)=>{
             await connection.query(query.insertFoto,[undefined,idGallery])
         }*/
     
-
-
-
     
         await connection.commit();
         

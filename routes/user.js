@@ -52,4 +52,6 @@ router.post('/getCountLike', userController.getCountLike); //recupera il numero 
 router.post('/forgottenPassword', userController.forgottenPassword); //procedura di password dimendicata
 router.post('/searchUser',userController.searchUser)
 router.post('/searchAll',userController.serchAll)
+router.post('/getBadge',userController.getBadge)
+router.post('/getMostLikeUser',userController.getMostLikeUser)
 module.exports = router;

@@ -792,46 +792,16 @@ exports.checkPassword = async (req, res, next) => {
 exports.getCountLike = async (req, res, next) => {
 
     var idUtente = req.body.id_utente;
-    var promisesArray = [];
-    var like = 0;
-
+    
 
     const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
 
     try {  
-        const [rows, field] = await connection.query(query.getEsperienzaByIdUtente, [idUtente]);
-        var experiences = rows;
-        //console.log("*** ", rows)
         
-        experiences.forEach(async exp => {
-            
-            var p = new Promise(async (resolve, reject) => {
-                const [rows, field] = await connection.query(query.getCountLikeByIdEsperienza, [exp.id_esperienza, 'esperienza']);
-                if(rows[0] != undefined){
-                    resolve(rows[0]);  
-                }
-                else{
-                    resolve(0);  
-                }
-            })
-
-            promisesArray.push(p);
-    });
-    
-    Promise.all(promisesArray).then( (values) => { 
-
-       //     console.log("*** RISULTATO ", values);
-
-        values.forEach( v => {
-            like = like + v.count; //Somma i like ottenuti per ogni esperienza di quell'utente
-        }) 
-
+        const [rows, field] = await connection.query(query.getCountLikeByUser, [idUtente]);
         res.status(201).json({
-            count_like : like
-        })
-    });
-
-            
+            count_like : rows[0].somma_voti_esperienze
+        })     
     }
     catch(err){ //se si verifica un errore 
         console.log("err " , err);
@@ -1050,4 +1020,84 @@ exports.serchAll = async(req,res,next) => {
     }
 
 
+}
+
+exports.getBadge = async (req,res,next) =>{
+    var idUtente = req.body.id_utente
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+ 
+    await connection.beginTransaction(async function (err) { //avvia una nuova transazione
+        if (err) { throw err; }
+    });
+
+    try {
+        
+        const [rows_badge, field_badge] = await connection.query(query.getBadge,[idUtente]);
+        
+        badge=rows_badge[0].badge
+        
+        res.status(201).json({
+            badge: badge
+        })
+    } catch (error) {
+        res.status(401).json({
+            mess : error
+        })
+    }
+}
+
+exports.getMostLikeUser = async (req,res,next)=>{
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+    promisesArray=[]
+
+    await connection.beginTransaction(async function (err) { //avvia una nuova transazione
+        if (err) { throw err; }
+    });
+
+    try {
+        [utenti,field_user]= await connection.query(query.getAllUser,[]);
+
+        utenti.forEach(async user => {
+            
+            var p = new Promise(async (resolve, reject) => {
+                
+                
+                const [rows, field] = await connection.query(query.getCountLikeByUser, [user.id_utente]);
+                if(rows[0] != undefined){
+                    
+                    
+                    resolve({utente: user,
+                             somma_voti_esperienze : rows[0].somma_voti_esperienze});  
+                }
+                else{
+                    resolve(0);  
+                }
+            })
+
+            promisesArray.push(p);
+        });
+    
+        Promise.all(promisesArray).then( (values) => { 
+        
+        
+            values.sort((a,b)=>{
+                return b.somma_voti_esperienze - a.somma_voti_esperienze
+
+                
+            })
+            res.status(201).json({
+                classifica : values
+            })
+            
+        });
+        
+        
+        
+    } catch (error) {
+        res.status(401).json({
+            mess : error
+        })
+    }
 }

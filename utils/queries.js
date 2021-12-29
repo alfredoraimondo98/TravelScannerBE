@@ -2,6 +2,7 @@ module.exports = {
 
     getUserByEmail: "SELECT * FROM utente WHERE email = ?",
     getUserById : "SELECT * FROM utente WHERE id_utente = ?",
+    getAllUser: " SELECT * FROM utente",
     getUserByNameSurname: "SELECT * FROM utente WHERE nome LIKE ? OR cognome LIKE ?",
     getPlaceByTitle: "SELECT * from luogo WHERE titolo LIKE ? ",
     getAllLuoghi : "SELECT * FROM luogo",
@@ -10,6 +11,10 @@ module.exports = {
     
     getEsperienzaByIdUtente : "SELECT * FROM creare_esperienza WHERE id_utente = ?", //esperienze dell'utente
     getCountLikeByIdEsperienza : "SELECT id_esperienza, COUNT(*) count FROM voto WHERE id_esperienza = ? AND tipo_voto = ?",
+    getCountLikeByUser: `SELECT COUNT(*) as somma_voti_esperienze FROM esperienza 
+                            JOIN creare_esperienza JOIN voto 
+                            ON esperienza.id_esperienza = creare_esperienza.id_esperienza AND  esperienza.id_esperienza = voto.id_esperienza 
+                            WHERE creare_esperienza.id_utente = ? AND voto.tipo_voto = 'esperienza' `,
 
     getAllPlacesWithOptionalField : `SELECT luogo.id_luogo, luogo.titolo, luogo.citta, luogo.nazione, luogo.posizione, esperienza.foto_copertina, esperienza.count_foto_copertina, 
                                             orari_di_apertura.orario_apertura, orari_di_apertura.orario_chiusura, costo.costo_minimo, costo.costo_massimo
@@ -216,6 +221,12 @@ module.exports = {
 
     getUserByIdEsperienza : "SELECT id_utente FROM creare_esperienza WHERE id_esperienza = ?",
 
+    getBadge: "SELECT badge FROM utente WHERE id_utente = ? ",
+
+    getCountAmbassadorById: "SELECT count_ambassador FROM utente WHERE id_utente = ?",
+
+    getAmbassadorByLuogo: "SELECT * FROM ambassador WHERE id_luogo = ? AND tipo_ambassador = ?",
+
 
     getLuogoByIdEsperienza : "SELECT id_luogo FROM esperienza WHERE id_esperienza = ?",
 
@@ -255,6 +266,7 @@ module.exports = {
     updateDescrizione: "UPDATE esperienza SET descrizione = ? WHERE id_esperienza = ?",
     updateAccessibilita: "UPDATE esperienza SET accessibilita = ? WHERE id_esperienza = ?",
     updateFotoCopertina: "UPDATE esperienza SET foto_copertina = ? WHERE id_esperienza = ?",
+    updateBadge: "UPDATE utente SET badge = ? WHERE id_utente = ?",
 
 
     updateMyName: "UPDATE utente SET nome = ? WHERE id_utente = ?",

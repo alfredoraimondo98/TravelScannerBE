@@ -34,10 +34,11 @@ router.post('/getVotoEffettuatoAccessibilita', esperienzaController.getVotoEffet
 router.post('/getVotoEffettuatoGallery', esperienzaController.getVotoEffettuatoFotoGallery)
 router.post('/getVotoEffettuatoEsperienza', esperienzaController.getVotoEffettuatoFotoGallery)
 
-router.post('/updateEsperienza',upload.array('fotoGallery',10),
-[
+router.post('/updateEsperienza', upload.array('images',10),
+    [
 
-], esperienzaController.updateEsperienza);
+    ], 
+    esperienzaController.updateEsperienza);
 
 
  

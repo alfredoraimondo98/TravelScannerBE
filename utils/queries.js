@@ -123,6 +123,15 @@ module.exports = {
                                     GROUP BY voto.id_esperienza
                                     ORDER BY count_esperienza DESC`, //recupera i count (voti) delle esperienze dell'utente
 
+
+    getEsperienzeCountByUserAndPlace : ` SELECT esperienza.id_luogo, voto.id_esperienza, tipo_voto, creare_esperienza.data_creazione, COUNT(*) as count_esperienza 
+                                    FROM esperienza JOIN voto JOIN creare_esperienza
+                                    ON voto.id_esperienza = esperienza.id_esperienza
+                                    AND esperienza.id_esperienza = creare_esperienza.id_esperienza
+                                    WHERE tipo_voto = 'esperienza' AND creare_esperienza.id_utente = ? AND esperienza.id_luogo = ?
+                                    GROUP BY voto.id_esperienza
+                                    ORDER BY count_esperienza DESC`, //recupera i count (voti) delle esperienze dell'utente per uno specifico luogo                                
+
     getDataCreazioneEsperienzaByLuogo : `SELECT esperienza.id_esperienza, creare_esperienza.data_creazione
                                             FROM esperienza JOIN creare_esperienza
                                             ON esperienza.id_esperienza = creare_esperienza.id_esperienza
@@ -151,6 +160,12 @@ module.exports = {
                             FROM esperienza LEFT JOIN creare_esperienza 
                             ON esperienza.id_esperienza = creare_esperienza.id_esperienza
                             WHERE creare_esperienza.id_utente = ?  `, //recupera le esperienze dell'utente loggato
+
+    
+    getExperiencesByUserAndLuogo : `SELECT esperienza.*, creare_esperienza.data_creazione 
+                            FROM esperienza LEFT JOIN creare_esperienza 
+                            ON esperienza.id_esperienza = creare_esperienza.id_esperienza
+                            WHERE esperienza.id_luogo = ? AND creare_esperienza.id_utente = ?  `, //recupera le esperienze dell'utente loggato
 
     getTotalDescrizione : `SELECT COUNT(*) as count_total FROM voto
                             WHERE tipo_voto='descrizione' AND voto.id_esperienza = ( 
@@ -190,6 +205,15 @@ module.exports = {
                                     AND esperienza.id_esperienza = creare_esperienza.id_esperienza
                                     WHERE creare_esperienza.id_utente = ?`, //recupera la gallery per ogni esperienza del luogo (per tutte le esperienze di un luogo)
 
+    getGalleryByEsperienzeOfUserByPlace : `SELECT esperienza.id_esperienza, gallery.*, foto.id_foto, foto.path 
+                                    FROM esperienza JOIN creare_esperienza JOIN gallery JOIN foto
+                                    ON esperienza.id_esperienza = gallery.id_esperienza
+                                    AND gallery.id_gallery = foto.id_gallery
+                                    AND esperienza.id_esperienza = creare_esperienza.id_esperienza
+                                    WHERE creare_esperienza.id_utente = ? AND esperienza.id_luogo = ?`, //recupera la gallery per ogni esperienza del luogo (per tutte le esperienze di un luogo)
+                          
+
+
     getUserByIdEsperienza : "SELECT id_utente FROM creare_esperienza WHERE id_esperienza = ?",
 
 
@@ -207,7 +231,7 @@ module.exports = {
     insertOrario : "INSERT INTO orari_di_apertura (id_luogo, orario_apertura, orario_chiusura) VALUES (?, ? , ?)",
     insertCosto : "INSERT INTO costo (id_luogo, costo_minimo, costo_massimo) VALUES (?, ? , ?)",
     insertGallery: "INSERT INTO gallery(count_gallery,id_esperienza) VALUES (?,?)",
-    insertFoto: "INSERT INTO foto(path,id_gallery) VALUES (?,?)",
+    
     insertVoto: "INSERT INTO voto(id_utente, id_esperienza, voto, tipo_voto) VALUES (?,?,?,?)",
     deleteVoto: "DELETE FROM voto WHERE id_utente = ? AND id_esperienza = ? AND tipo_voto = ?",
 

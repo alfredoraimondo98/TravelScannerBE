@@ -1588,19 +1588,26 @@ exports.getVotoEffettuatoEsperienza = async(req,res,next)=>{
 
 
 exports.updateEsperienza = async(req,res,next)=>{
-    var idEsperienza= req.body.idEsperienza;
+
+    var idEsperienza= req.body.id_esperienza;
     var descrizione=req.body.descrizione;
     var accessibilita= req.body.accessibilita
-    var fotoCopertina=req.files[0].path.slice(6)
+    var fotoCopertina = null;
+    if(req.files[0]){ //Verifica se è presente la foto copertina
+        fotoCopertina = req.files[0].path.slice(6);
+        fotoCopertina = fotoCopertina.replace(/\\/g, "/"); //reverse url foto copertina
+    }
     var fotoGallery=[]
     
 
-    for(var i=1; i<req.files.length;i++){
-        img=req.files[i].path.slice(6)
-        fotoGallery.push(img.replace(/\\/g, "/"))
+    if(req.files){
+        for(var i=1; i<req.files.length;i++){
+            img=req.files[i].path.slice(6)
+            fotoGallery.push(img.replace(/\\/g, "/"))
+        }
     }
     
-
+    
     const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
 
     await connection.beginTransaction(async function (err) { //avvia una nuova transazione
@@ -1609,13 +1616,11 @@ exports.updateEsperienza = async(req,res,next)=>{
 
     try {
         
-        if(descrizione!=null)
+        if(descrizione!=null) 
         {
 
             await connection.query(queries.updateDescrizione,[descrizione,idEsperienza])
-            
-
-            
+      
         }
 
         if(accessibilita!=null)
@@ -1623,9 +1628,7 @@ exports.updateEsperienza = async(req,res,next)=>{
             await connection.query(queries.updateAccessibilita,[accessibilita,idEsperienza])
             
 
-            res.status(201).json({
-                mess: "ok acc"
-            })
+           
         }
         
         if(fotoCopertina!=null)
@@ -1646,19 +1649,24 @@ exports.updateEsperienza = async(req,res,next)=>{
             }
 
         }
-
-        else{
+        /*else{
             const [rows_gallery,field_gallery]= await connection.query(query.getGallery,[idEsperienza])
             idGallery= rows_gallery[0].id_gallery;
             await connection.query(query.insertFoto,[undefined,idGallery])
-        }
+        }*/
     
-        
-        
+
+
+
+    
         await connection.commit();
         
+
+        res.status(201).json({
+            mess: "ok"
+        })
         
-    } catch (error) {;
+    } catch (error) {
 
         res.status(401).json({
             mess : error

@@ -13,6 +13,7 @@ router.get('/getRecentlyUsersPhoto', userController.getRecentlyUsersPhoto); //re
 
 router.post('/getMyProfile', userController.getMyProfile); //restituisce i dati del profilo di un dato utente
 router.post('/getMyExperiences', userController.getMyExperiences) //Restituisce tutte le esperienze create dall'utente
+router.post('/getMyExperienceByPlace', userController.getMyExperienceByPlace); //restituisce le esperienze di un utente per un dato luogo
 
 router.post('/updateMyProfile', 
                 upload.single('img'),

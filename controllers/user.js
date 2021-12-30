@@ -1068,6 +1068,7 @@ exports.serchAll = async(req,res,next) => {
 exports.getBadge = async (req,res,next) =>{
     var idUtente = req.body.id_utente
     
+   
 
     const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
 
@@ -1087,28 +1088,28 @@ exports.getBadge = async (req,res,next) =>{
 
         if(countAmb>=10 && countAmb<24)
         {
-            await connection.query(query.updateBadge, ["Turista moderato",idUtente]);
+            await connection.query(query.updateBadge, ["Turista abitudinario",idUtente]);
             
+            if(Oldbadge != "Turista abitudinario"){
+                changeBadge=true
+                newBadge="Turista abitudinario"
+            }
+        }
+        if(countAmb>=25 && countAmb<49)
+        {
+            await connection.query(query.updateBadge, ["Turista moderato",idUtente]);
             if(Oldbadge != "Turista moderato"){
                 changeBadge=true
                 newBadge="Turista moderato"
             }
         }
-        if(countAmb>=25 && countAmb<49)
+
+        if(countAmb>=50 && countAmb<99)
         {
             await connection.query(query.updateBadge, ["Turista avventuroso",idUtente]);
             if(Oldbadge != "Turista avventuroso"){
                 changeBadge=true
                 newBadge="Turista avventuroso"
-            }
-        }
-
-        if(countAmb>=50 && countAmb<99)
-        {
-            await connection.query(query.updateBadge, ["Turista abitudinario",idUtente]);
-            if(Oldbadge != "Turista abitudinario"){
-                changeBadge=true
-                newBadge="Turista abitudinario"
             }
         }
 

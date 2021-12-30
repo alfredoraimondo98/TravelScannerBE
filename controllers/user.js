@@ -1067,23 +1067,75 @@ exports.serchAll = async(req,res,next) => {
 
 exports.getBadge = async (req,res,next) =>{
     var idUtente = req.body.id_utente
+    
 
     const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
 
- 
-    await connection.beginTransaction(async function (err) { //avvia una nuova transazione
-        if (err) { throw err; }
-    });
 
     try {
         
         const [rows_badge, field_badge] = await connection.query(query.getBadge,[idUtente]);
         
-        badge=rows_badge[0].badge
+        var Oldbadge=rows_badge[0].badge
+        var newBadge
+        var changeBadge=false
+
+        const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idUtente]);
+
+        countAmb= rows_countAmb[0].count_ambassador
         
-        res.status(201).json({
-            badge: badge
-        })
+
+        if(countAmb>=10 && countAmb<24)
+        {
+            await connection.query(query.updateBadge, ["Turista moderato",idUtente]);
+            
+            if(Oldbadge != "Turista moderato"){
+                changeBadge=true
+                newBadge="Turista moderato"
+            }
+        }
+        if(countAmb>=25 && countAmb<49)
+        {
+            await connection.query(query.updateBadge, ["Turista avventuroso",idUtente]);
+            if(Oldbadge != "Turista avventuroso"){
+                changeBadge=true
+                newBadge="Turista avventuroso"
+            }
+        }
+
+        if(countAmb>=50 && countAmb<99)
+        {
+            await connection.query(query.updateBadge, ["Turista abitudinario",idUtente]);
+            if(Oldbadge != "Turista abitudinario"){
+                changeBadge=true
+                newBadge="Turista abitudinario"
+            }
+        }
+
+        if(countAmb>=100)
+        {
+            await connection.query(query.updateBadge, ["Turista elite",idUtente]);
+
+            if(Oldbadge != "Turista elite"){
+                changeBadge=true
+                newBadge="Turista elite"
+            }
+        }
+
+        if(changeBadge){
+            res.status(201).json({
+                badge: newBadge,
+                messaggio: "badge cambiato"
+            })
+        }
+        else{
+            res.status(201).json({
+                badge: Oldbadge,
+                messaggio: "badge non cambiato"
+            })    
+        }
+        
+        
     } catch (error) {
         res.status(401).json({
             mess : error

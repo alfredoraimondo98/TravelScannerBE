@@ -202,7 +202,7 @@ exports.votaFotoCopertina = async (req, res, next)=>{
                 else{ //se l'utente votato che è anche quello più votato non è ambassador allora si cambia l'ambassador
                     await connection.query(query.updateAmbassador, [idUtenteVotato, votoMyFotoCopertina, luogo.id_luogo, 'fotoCopertina']);
                     await connection.query(query.updateCountAmbassadorByUser, [1, idUtenteVotato]);
-
+                    /*
                     const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idUtenteVotato]);
 
                     countAmb= rows_countAmb[0].count_ambassador
@@ -224,7 +224,7 @@ exports.votaFotoCopertina = async (req, res, next)=>{
                     if(countAmb>=100)
                     {
                         await connection.query(query.updateBadge, ["Turista elite",idUtenteVotato]);
-                    }
+                    }*/
 
 
                 }
@@ -237,9 +237,10 @@ exports.votaFotoCopertina = async (req, res, next)=>{
                     await connection.query(query.updateAmbassador, [idTopCopertina, votoTopCopertina, luogo.id_luogo, 'fotoGallery']);
                     await connection.query(query.updateCountAmbassadorByUser, [1, idTopGallery]);
                     
-                    const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopCopertina]);
+                    /*const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopCopertina]);
 
                     countAmb= rows_countAmb[0].count_ambassador
+
 
                     if(countAmb>=10 && countAmb<24)
                     {
@@ -258,7 +259,7 @@ exports.votaFotoCopertina = async (req, res, next)=>{
                     if(countAmb>=100)
                     {
                         await connection.query(query.updateBadge, ["Turista elite",idTopCopertina]);
-                    }
+                    }*/
 
                 }
                 
@@ -300,7 +301,7 @@ exports.votaFotoCopertina = async (req, res, next)=>{
                 await connection.query(query.updateAmbassador, [idTopCopertina, votoTopCopertina , luogo.id_luogo, 'fotoCopertina']); //l'utente appena votato diventa ambassador
                 await connection.query(query.updateCountAmbassadorByUser, [1, idTopCopertina]);
 
-                const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopCopertina]);
+                /*const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopCopertina]);
 
                 countAmb= rows_countAmb[0].count_ambassador
 
@@ -321,7 +322,7 @@ exports.votaFotoCopertina = async (req, res, next)=>{
                 if(countAmb>=100)
                 {
                     await connection.query(query.updateBadge, ["Turista elite",idTopCopertina]);
-                }
+                }*/
                 
             }
             else{
@@ -407,7 +408,7 @@ exports.votaFotoGallery = async (req, res, next)=>{
                 await connection.query(query.updateAmbassador, [idUtenteVotato, votoMyFotoGallery, luogo.id_luogo, 'fotoGallery']);
                 await connection.query(query.updateCountAmbassadorByUser, [1, idUtenteVotato]);
                 
-                const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idUtenteVotato]);
+                /*const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idUtenteVotato]);
 
                 countAmb= rows_countAmb[0].count_ambassador
 
@@ -428,7 +429,7 @@ exports.votaFotoGallery = async (req, res, next)=>{
                 if(countAmb>=100)
                 {
                     await connection.query(query.updateBadge, ["Turista elite",idUtenteVotato]);
-                }
+                }*/
 
 
             }
@@ -445,7 +446,7 @@ exports.votaFotoGallery = async (req, res, next)=>{
                 await connection.query(query.updateAmbassador, [idTopGallery, votoTopFotoGallery, luogo.id_luogo, 'fotoGallery']);
                 await connection.query(query.updateCountAmbassadorByUser, [1, idTopGallery]);
                 
-                const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopGallery]);
+                /*const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopGallery]);
 
                 countAmb= rows_countAmb[0].count_ambassador
 
@@ -466,7 +467,7 @@ exports.votaFotoGallery = async (req, res, next)=>{
                 if(countAmb>=100)
                 {
                     await connection.query(query.updateBadge, ["Turista elite",idTopGallery]);
-                }
+                }*/
 
             }
             
@@ -513,7 +514,7 @@ exports.votaFotoGallery = async (req, res, next)=>{
                     await connection.query(query.updateAmbassador, [idTopGallery, votoTopFotoGallery , luogo.id_luogo, 'fotoGallery']); //l'utente appena votato diventa ambassador
                     await connection.query(query.updateCountAmbassadorByUser, [1, idTopGallery]);
 
-                    const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopGallery]);
+                    /*const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopGallery]);
 
                     countAmb= rows_countAmb[0].count_ambassador
 
@@ -534,7 +535,7 @@ exports.votaFotoGallery = async (req, res, next)=>{
                     if(countAmb>=100)
                     {
                         await connection.query(query.updateBadge, ["Turista elite",idTopGallery]);
-                    }
+                    }*/
                 }
             }
             else{
@@ -543,7 +544,7 @@ exports.votaFotoGallery = async (req, res, next)=>{
                     await connection.query(query.updateAmbassador, [idTopGallery, votoTopFotoGallery, luogo.id_luogo, 'fotoGallery']); //l'utente appena votato diventa ambassador
                     await connection.query(query.updateCountAmbassadorByUser, [1, idTopGallery]);
 
-                    const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopGallery]);
+                    /*const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopGallery]);
 
                     countAmb= rows_countAmb[0].count_ambassador
 
@@ -564,7 +565,7 @@ exports.votaFotoGallery = async (req, res, next)=>{
                     if(countAmb>=100)
                     {
                         await connection.query(query.updateBadge, ["Turista elite",idTopGallery]);
-                    }
+                    }*/
                 }
                 else{
                     await connection.query(query.updateAmbassador, [idTopGallery, votoTopFotoGallery, luogo.id_luogo, 'fotoGallery']);
@@ -647,7 +648,7 @@ exports.votaDescrizione = async (req, res, next)=>{
                     await connection.query(query.updateAmbassador, [idTopDescrizione, votoTopDescrizione , luogo.id_luogo, 'descrizione']); //l'utente appena votato diventa ambassador
                     await connection.query(query.updateCountAmbassadorByUser, [1, idTopDescrizione])
 
-                    const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopDescrizione]);
+                    /*const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopDescrizione]);
                     countAmb= rows_countAmb[0].count_ambassador
 
                     if(countAmb>=10 && countAmb<24)
@@ -667,7 +668,7 @@ exports.votaDescrizione = async (req, res, next)=>{
                     if(countAmb>=100)
                     {
                         await connection.query(query.updateBadge, ["Turista elite",idTopDescrizione]);
-                    }
+                    }*/
 
                 }
                 
@@ -681,7 +682,7 @@ exports.votaDescrizione = async (req, res, next)=>{
                     await connection.query(query.updateAmbassador, [idTopDescrizione, votoTopDescrizione, luogo.id_luogo, 'descrizione']); 
                     await connection.query(query.updateCountAmbassadorByUser, [1, idTopDescrizione]);
 
-                    const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopDescrizione]);
+                   /* const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopDescrizione]);
                     countAmb= rows_countAmb[0].count_ambassador
 
                     if(countAmb>=10 && countAmb<24)
@@ -701,7 +702,7 @@ exports.votaDescrizione = async (req, res, next)=>{
                     if(countAmb>=100)
                     {
                         await connection.query(query.updateBadge, ["Turista elite",idTopDescrizione]);
-                    }
+                    }*/
 
                 }
                
@@ -758,7 +759,7 @@ exports.votaDescrizione = async (req, res, next)=>{
                     await connection.query(query.updateAmbassador, [idTopDescrizione, votoTopDescrizione , luogo.id_luogo, 'descrizione']); //l'utente appena votato diventa ambassador
                     await connection.query(query.updateCountAmbassadorByUser, [1, idTopDescrizione])
 
-                    const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopDescrizione]);
+                    /*const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopDescrizione]);
                     countAmb= rows_countAmb[0].count_ambassador
 
                     if(countAmb>=10 && countAmb<24)
@@ -778,7 +779,7 @@ exports.votaDescrizione = async (req, res, next)=>{
                     if(countAmb>=100)
                     {
                         await connection.query(query.updateBadge, ["Turista elite",idTopDescrizione]);
-                    }
+                    }*/
 
                 }
                 
@@ -792,7 +793,7 @@ exports.votaDescrizione = async (req, res, next)=>{
                     await connection.query(query.updateAmbassador, [idTopDescrizione, votoTopDescrizione, luogo.id_luogo, 'descrizione']); 
                     await connection.query(query.updateCountAmbassadorByUser, [1, idTopDescrizione]);
 
-                    const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopDescrizione]);
+                    /*const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopDescrizione]);
                     countAmb= rows_countAmb[0].count_ambassador
 
                     if(countAmb>=10 && countAmb<24)
@@ -812,7 +813,7 @@ exports.votaDescrizione = async (req, res, next)=>{
                     if(countAmb>=100)
                     {
                         await connection.query(query.updateBadge, ["Turista elite",idTopDescrizione]);
-                    }
+                    }*/
 
                 }
                
@@ -896,7 +897,7 @@ exports.votaAccessibilita = async (req, res, next)=>{
                     await connection.query(query.updateAmbassador, [idTopAccessibilita, votoTopAccessibilita , luogo.id_luogo, 'accessibilita']); //l'utente appena votato diventa ambassador
                     await connection.query(query.updateCountAmbassadorByUser, [1, idTopAccessibilita])
 
-                    const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopAccessibilita]);
+                    /*const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopAccessibilita]);
                     countAmb= rows_countAmb[0].count_ambassador
 
                     if(countAmb>=10 && countAmb<24)
@@ -916,7 +917,7 @@ exports.votaAccessibilita = async (req, res, next)=>{
                     if(countAmb>=100)
                     {
                         await connection.query(query.updateBadge, ["Turista elite",idTopAccessibilita]);
-                    }
+                    }*/
 
                 }
                 
@@ -930,7 +931,7 @@ exports.votaAccessibilita = async (req, res, next)=>{
                     await connection.query(query.updateAmbassador, [idTopAccessibilita, votoTopAccessibilita, luogo.id_luogo, 'accessibilita']); 
                     await connection.query(query.updateCountAmbassadorByUser, [1, idTopAccessibilita]);
 
-                    const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopAccessibilita]);
+                    /*const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopAccessibilita]);
                     countAmb= rows_countAmb[0].count_ambassador
 
                     if(countAmb>=10 && countAmb<24)
@@ -950,7 +951,7 @@ exports.votaAccessibilita = async (req, res, next)=>{
                     if(countAmb>=100)
                     {
                         await connection.query(query.updateBadge, ["Turista elite",idTopAccessibilita]);
-                    }
+                    }*/
 
                 }
                
@@ -1002,7 +1003,7 @@ exports.votaAccessibilita = async (req, res, next)=>{
                     await connection.query(query.updateAmbassador, [idTopAccessibilita, votoTopAccessibilita , luogo.id_luogo, 'accessibilita']); //l'utente appena votato diventa ambassador
                     await connection.query(query.updateCountAmbassadorByUser, [1, idTopAccessibilita])
 
-                    const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopAccessibilita]);
+                   /* const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopAccessibilita]);
                     countAmb= rows_countAmb[0].count_ambassador
 
                     if(countAmb>=10 && countAmb<24)
@@ -1022,7 +1023,7 @@ exports.votaAccessibilita = async (req, res, next)=>{
                     if(countAmb>=100)
                     {
                         await connection.query(query.updateBadge, ["Turista elite",idTopAccessibilita]);
-                    }
+                    }*/
 
                 }
                 
@@ -1036,7 +1037,7 @@ exports.votaAccessibilita = async (req, res, next)=>{
                     await connection.query(query.updateAmbassador, [idTopAccessibilita, votoTopAccessibilita, luogo.id_luogo, 'accessibilita']); 
                     await connection.query(query.updateCountAmbassadorByUser, [1, idTopAccessibilita]);
 
-                    const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopAccessibilita]);
+                    /*const [rows_countAmb, field_countAmb] = await connection.query(query.getCountAmbassadorById, [idTopAccessibilita]);
                     countAmb= rows_countAmb[0].count_ambassador
 
                     if(countAmb>=10 && countAmb<24)
@@ -1056,7 +1057,7 @@ exports.votaAccessibilita = async (req, res, next)=>{
                     if(countAmb>=100)
                     {
                         await connection.query(query.updateBadge, ["Turista elite",idTopAccessibilita]);
-                    }
+                    }*/
 
                 }
                

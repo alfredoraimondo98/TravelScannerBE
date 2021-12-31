@@ -28,8 +28,8 @@ router.post('/updateMyProfile',
 
 
 
-router.post('/updateName', [body('nome').isLength({max : 100}),],userController.updateName);
-router.post('/updateSurname',[ body('cognome').isLength({max : 100})], userController.updateSurname);
+router.post('/updateName', [body('nome').isLength({min:2, max : 100}),],userController.updateName);
+router.post('/updateSurname',[ body('cognome').isLength({min : 2, max : 100})], userController.updateSurname);
 router.post('/updateEmail', [body('email').isEmail().withMessage('Inserisci una mail valida name@server.com'),],userController.updateEmail);
 router.post('/updateEmail', upload.single('img'),userController.updateImgProfile);
 

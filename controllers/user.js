@@ -145,7 +145,7 @@ exports.getMyProfile = async (req, res, next) => {
 
         //AGGIUNTA GALLERY ESPERIENZA
         experiences.forEach( exp => {  
-            exp.img = service.server+exp.img; //Immagine utente
+            //exp.img = service.server+exp.img; //Immagine utente
             exp.foto_copertina = service.server+exp.foto_copertina //immagine copertina
             exp['gallery'] = [];
             galleryComplete.forEach( gallery => {
@@ -161,11 +161,56 @@ exports.getMyProfile = async (req, res, next) => {
             return b.data_creazione - a.data_creazione
         })
         
+
+
+         // Recupera informazioni dei like dell'utente loggato
+         var promisesArray = [];
+         experiences.forEach(async exp => {
+             
+                 var p = new Promise(async (resolve, reject) => {
+                     const [rows, field] = await connection.query(query.verifyVotoTipo, [idUtente, exp.id_esperienza, 'esperienza']);
+                     if(rows[0] != undefined){
+                         resolve(true);  
+                         //resultsVoteVerify.push(rows[0].voto);
+                     }
+                     else{
+                         resolve(false);  
+                         //resultsVoteVerify.push(0);
+                     }
+                 })
+ 
+                 promisesArray.push(p);
+         });
+ 
+     
+         Promise.all(promisesArray).then( (values) => {
+             //resultsVoteVerify.push(values);
+ 
+             //Conversione data
+             for(let i = 0; i < experiences.length; i++){
+                 //voto esperienza per l'utente loggato (true|false)
+                // console.log("****** VOTE VERIFY, ", values[i]);
+ 
+                 experiences[i]['flag_voto_esperienza'] = values[i];
+ 
+                 //data
+                 let dataC = (experiences[i].data_creazione.toISOString().slice(0,10)); //Conversione data
+                 let y= dataC.slice(0,4)
+                 let m = dataC.slice(5,7);
+                 let d = dataC.slice(8-10);
+                 experiences[i].data_creazione = d+"-"+m+"-"+y;
+             }
+ 
+ 
+            // console.log("**** ", experiences)
+ 
+             res.status(201).send(experiences);
+ 
+ 
+         });
     
         
-        res.status(201).json({
-            esperienze : experiences
-        })
+       
             
     }
     catch(err){ //se si verifica un errore 

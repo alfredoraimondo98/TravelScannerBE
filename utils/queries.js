@@ -16,13 +16,6 @@ module.exports = {
                             ON esperienza.id_esperienza = creare_esperienza.id_esperienza AND  esperienza.id_esperienza = voto.id_esperienza 
                             WHERE creare_esperienza.id_utente = ? AND voto.tipo_voto = 'esperienza' `,
 
-    getAllPlacesWithOptionalField : `SELECT luogo.id_luogo, luogo.titolo, luogo.citta, luogo.nazione, luogo.posizione, esperienza.foto_copertina, esperienza.count_foto_copertina, 
-                                            orari_di_apertura.orario_apertura, orari_di_apertura.orario_chiusura, costo.costo_minimo, costo.costo_massimo
-                                    FROM luogo JOIN costo JOIN orari_di_apertura JOIN esperienza
-                                        ON luogo.id_luogo = costo.id_luogo AND luogo.id_luogo = orari_di_apertura.id_luogo AND luogo.id_luogo = esperienza.id_luogo
-                                        ORDER BY esperienza.count_foto_copertina DESC
-                                    `,
-
     getLuogoById : "SELECT * FROM luogo WHERE id_luogo = ?", 
     
 
@@ -44,7 +37,7 @@ module.exports = {
                                                     ORDER BY count_descrizione DESC, creare_esperienza.data_creazione DESC LIMIT 1
                                                 `,
 
-    getTopFotoCopertinaByLuogoWithUser :`SELECT esperienza.id_esperienza, foto_copertina, count_foto_copertina, creare_esperienza.id_utente, 
+    getTopFotoCopertinaByLuogoWithUser :`SELECT esperienza.id_luogo, esperienza.id_esperienza, foto_copertina, count_foto_copertina, creare_esperienza.id_utente, 
                                             utente.nome, utente.cognome, utente.img, creare_esperienza.data_creazione 
                                         FROM esperienza JOIN creare_esperienza JOIN utente
                                         ON esperienza.id_esperienza = creare_esperienza.id_esperienza

@@ -193,15 +193,14 @@ async function verifyLuogo(titolo){
     });
 
     var allPlaces;
-    var luoghiCard = [];
     var randomPlaces = [];
 
     try {
         
-        const [rows_all, field_all] = await connection.query(query.getAllPlacesWithOptionalField); //recupera tutti i luoghi
-        allPlaces = rows_all;
 
-
+        const [rows_placesAll, field_placesAll] = await connection.query(query.getAllLuoghi);
+        allPlaces = rows_placesAll; //recupera tutti i luoghi
+      
         //seleziona 5 random places da mostrare sulla home
         if(allPlaces.length > 5){
             for(let i=0; i<5; i++){ //Visualizza solo 5 luoghi nella homepage
@@ -213,37 +212,87 @@ async function verifyLuogo(titolo){
             }   
         }
         else{
-            randomPlaces = luoghiCard;
+            randomPlaces = allPlaces; //Visualizza tutti i luoghi
         }
+
+
+        // Recupera foto copertina dei cinque luoghi selezionati
+        var promisesArray = [];
+        randomPlaces.forEach(async randP => {
+            
+                var p = new Promise(async (resolve, reject) => {
+                    const [rows, field] = await connection.query(query.getTopFotoCopertinaByLuogoWithUser, [randP.id_luogo]);
+                    if(rows[0] != undefined){
+                        resolve(rows[0]);  
+                    }
+                    else{
+                        resolve(false);  
+                    }
+                })
+
+                promisesArray.push(p);
+        });
+
+        
+        Promise.all(promisesArray).then( async (values) => {
+
+            for(let i = 0; i< randomPlaces.length; i++){
+                if(values != false){
+                    randomPlaces[i].foto_copertina = values[i].foto_copertina;
+                    randomPlaces[i].count_foto_copertina = values[i].count_foto_copertina;
+                }
+
+                 //data
+                let dataC = (randomPlaces[i].data_creazione.toISOString().slice(0,10)); //Conversione data
+                let y= dataC.slice(0,4)
+                let m = dataC.slice(5,7);
+                let d = dataC.slice(8-10);
+                randomPlaces[i].data_creazione = d+"-"+m+"-"+y;
+            }
+            console.log("***VALUES ", values);
+
+
+             //aggiungere i campi necessari per l'oggetto 'luogo' del frontend
+
+            randomPlaces.forEach( el => {
+                el['descrizione'] = ``;
+                el['accessibilita'] = ``;
+                if(el.orario_apertura == null){
+                    el.orario_apertura = '';
+                }
+                if(el.orario_chiusura == null){
+                    el.orario_chiusura = '';
+                }
+                if(el.costo_minimo == null){
+                    el.costo_minimo = '';
+                }
+                if(el.costo_massimo == null){
+                    el.costo_massimo = '';
+                }
+                if(el.foto_copertina != null && el.foto_copertina != ''){
+                    el.foto_copertina = service.server + el.foto_copertina;
+                }
+                else{
+                    el.foto_copertina = '';
+                }
+                el['voto_luogo'] = -1;
+                el['numero_votazioni'] = -1; 
+            })
+
+
+
+            await connection.commit(); //effettua il commit delle transazioni
+
+            res.status(201).send(randomPlaces);
+
+
+
+        })
+
        
         
 
-        //aggiungere i campi necessari per l'oggetto 'luogo' del frontend
-
-        randomPlaces.forEach( el => {
-            el['descrizione'] = ``;
-            el['accessibilita'] = ``;
-            if(el.orario_apertura == null){
-                el.orario_apertura = '';
-            }
-            if(el.orario_chiusura == null){
-                el.orario_chiusura = '';
-            }
-            if(el.costo_minimo == null){
-                el.costo_minimo = '';
-            }
-            if(el.costo_massimo == null){
-                el.costo_massimo = '';
-            }
-            if(el.foto_copertina != null && el.foto_copertina != ''){
-                el.foto_copertina = service.server + el.foto_copertina;
-            }
-            else{
-                el.foto_copertina = '';
-            }
-            el['voto_luogo'] = -1;
-            el['numero_votazioni'] = -1; 
-        })
+       
          
        
          
@@ -268,9 +317,7 @@ async function verifyLuogo(titolo){
 
     
 
-        await connection.commit(); //effettua il commit delle transazioni
-
-        res.status(201).send(randomPlaces);
+     
 
             
     }

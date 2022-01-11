@@ -24,6 +24,8 @@ exports.createEsperienza = async (req, res, next)=>{
     var descrizione= req.body.descrizione
     var idUtente= req.body.id_utente
     var idLuogo= req.body.id_luogo
+    var flagFotoCopertina = req.body.flag_foto_copertina;
+    var flagFotoGallery = req.body.flag_fotogallery;
 
 
     console.log("*** idutente, idluogo", idUtente, idLuogo);
@@ -33,18 +35,40 @@ exports.createEsperienza = async (req, res, next)=>{
     var countAccessibilita=0
     var countFotoCopertina=0  
     var dataCreazione = format(new Date(), 'YYYY-MM-DD');
-    var fotos=[]
+    var fotos=[];
+    var fotoCopertina;
     
-    for(var i=0; i<req.files.length; i++){
-        img=req.files[i].path.slice(6)
-        fotos.push(img.replace(/\\/g, "/"))
+    if(req.files){
+
+        //Verifica se è presente foto copertina
+        if(flagFotoCopertina == "true"){
+            for(var i=0; i<req.files.length; i++){
+                img=req.files[i].path.slice(6)
+                fotos.push(img.replace(/\\/g, "/"))
+            }
+        
+            fotoCopertina=fotos[0]
+        }
+        else{ //Se non c'è la foto copertina
+            fotos.push('/images/default_images/default_cover_photo.png') //inserisce come prima foto la foto copertina
+
+            for(var i=0; i<req.files.length; i++){ //recupera foto gallery
+                img=req.files[i].path.slice(6)
+                fotos.push(img.replace(/\\/g, "/"))
+            }
+
+            fotoCopertina=fotos[0]
+        }       
     }
 
-    var fotoCopertina=fotos[0]
-    
-    
-    
 
+    //se la gallery non contiene almeno 5 foto (length < 6), allora inserire le restanti immagini di default per la gallery
+    while(fotos.length <= 6){
+        fotos.push('/images/default_images/default_photogallery.png'); //immagine default photogallery
+    }
+    
+    
+    
     const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
 
     await connection.beginTransaction(async function (err) { //avvia una nuova transazione
@@ -56,10 +80,8 @@ exports.createEsperienza = async (req, res, next)=>{
             accessibilita, countAccessibilita, idLuogo]);
 
         
-
         var idEsperienza = rows_esperienza.insertId;
 
-        
 
         await connection.query(query.insertUserCreateExperience, [idUtente,idEsperienza,dataCreazione]);
 
@@ -73,7 +95,6 @@ exports.createEsperienza = async (req, res, next)=>{
         }
         
             
-
         await connection.commit(); //effettua il commit delle transazioni
 
         res.status(201).json({

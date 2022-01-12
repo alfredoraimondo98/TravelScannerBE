@@ -2064,18 +2064,38 @@ exports.updateEsperienza = async(req,res,next)=>{
     var descrizione=req.body.descrizione;
     var accessibilita= req.body.accessibilita
     var fotoCopertina = null;
-    if(req.files[0]){ //Verifica se è presente la foto copertina
-        fotoCopertina = req.files[0].path.slice(6);
-        fotoCopertina = fotoCopertina.replace(/\\/g, "/"); //reverse url foto copertina
-    }
-    var fotoGallery=[]
-    
+    var flagFotoCopertina = req.body.flag_foto_copertina;
+    var flagFotoGallery = req.body.flag_fotogallery;
+    var fotoGallery = [];
+
 
     if(req.files){
-        for(var i=1; i<req.files.length;i++){
-            img=req.files[i].path.slice(6)
-            fotoGallery.push(img.replace(/\\/g, "/"))
+
+        //Verifica se è presente foto copertina
+        if(flagFotoCopertina == "true"){
+            for(var i=0; i<req.files.length; i++){
+                img=req.files[i].path.slice(6)
+                fotoGallery.push(img.replace(/\\/g, "/"))
+            }
+        
+            fotoCopertina=fotoGallery[0]
         }
+        else{ //Se non c'è la foto copertina
+            fotoGallery.push('/images/default_images/default_cover_photo.png') //inserisce come prima foto la foto copertina
+
+            for(var i=0; i<req.files.length; i++){ //recupera foto gallery
+                img=req.files[i].path.slice(6)
+                fotoGallery.push(img.replace(/\\/g, "/"))
+            }
+
+            fotoCopertina=fotoGallery[0]
+        }       
+    }
+
+
+    //se la gallery non contiene almeno 5 foto (length < 6), allora inserire le restanti immagini di default per la gallery
+    while(fotoGallery.length <= 6){
+        fotoGallery.push('/images/default_images/default_photogallery.png'); //immagine default photogallery
     }
     
     

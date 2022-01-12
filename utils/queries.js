@@ -154,10 +154,12 @@ module.exports = {
 
 
 
-    getExperiencesByUser : `SELECT esperienza.*, creare_esperienza.data_creazione 
+    getExperiencesByUser : `SELECT esperienza.*, creare_esperienza.data_creazione, luogo.titolo
                             FROM esperienza LEFT JOIN creare_esperienza 
                             ON esperienza.id_esperienza = creare_esperienza.id_esperienza
-                            WHERE creare_esperienza.id_utente = ?  `, //recupera le esperienze dell'utente loggato
+                            JOIN luogo
+                            ON esperienza.id_luogo = luogo.id_luogo
+                            WHERE creare_esperienza.id_utente = ? `, //recupera le esperienze dell'utente loggato
 
     
     getExperiencesByUserAndLuogo : `SELECT esperienza.*, creare_esperienza.data_creazione, luogo.titolo

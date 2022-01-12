@@ -160,9 +160,11 @@ module.exports = {
                             WHERE creare_esperienza.id_utente = ?  `, //recupera le esperienze dell'utente loggato
 
     
-    getExperiencesByUserAndLuogo : `SELECT esperienza.*, creare_esperienza.data_creazione 
+    getExperiencesByUserAndLuogo : `SELECT esperienza.*, creare_esperienza.data_creazione, luogo.titolo
                             FROM esperienza LEFT JOIN creare_esperienza 
                             ON esperienza.id_esperienza = creare_esperienza.id_esperienza
+                            JOIN luogo
+                            ON esperienza.id_luogo = luogo.id_luogo
                             WHERE esperienza.id_luogo = ? AND creare_esperienza.id_utente = ?  `, //recupera le esperienze dell'utente loggato
 
     getTotalDescrizione : `SELECT COUNT(*) as count_total FROM voto

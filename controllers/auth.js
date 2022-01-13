@@ -35,7 +35,7 @@ exports.register = async (req, res, next) => {
         img = img.replace(/\\/g, "/"); 
     }
     else{
-        img = '/images/logo.jpg' //immagine profilo utente (default)
+        img = '/images/default_images/default_user_image.png' //immagine profilo utente (default)
     }
 
     if(await verifyMail(email)){ //se la mail è già presente viene restituito TRUE e non si può procedere alla registrazione

@@ -54,4 +54,8 @@ router.post('/searchUser',userController.searchUser)
 router.post('/searchAll',userController.serchAll)
 router.post('/getBadge',userController.getBadge)
 router.post('/getMostLikeUser',userController.getMostLikeUser)
+
+router.post('/getLikedUsers', userController.getLikedUsers); //restituisce gli utenti che hanno messo like ad un esperienza (si specifica il tipo_voto per visualizzare i like per esperienza, fotoCopertina, fotoGallery)
+
+
 module.exports = router;

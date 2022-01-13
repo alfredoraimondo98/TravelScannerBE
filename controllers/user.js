@@ -165,6 +165,7 @@ exports.getMyProfile = async (req, res, next) => {
 
          // Recupera informazioni dei like dell'utente loggato
          var promisesArray = [];
+         var promisesArrayLikedUser = []; //array promises utenti che hanno messo like a ogni esperienza
          experiences.forEach(async exp => {
              
                  var p = new Promise(async (resolve, reject) => {
@@ -180,18 +181,57 @@ exports.getMyProfile = async (req, res, next) => {
                  })
  
                  promisesArray.push(p);
+
+
+                 //Query per ottenere gli utenti che hanno messo like all'esperienza
+                var pLikedUser = new Promise(async (resolve, reject) => {
+                    const [rows, field] = await connection.query(query.getLikedUsers, [exp.id_esperienza, 'esperienza']); //NB. specificare il tipo di voto che si vuole considerare (esperienza || fotoCopertina || fotoGallery)
+                    if(rows[0] != undefined){
+                        resolve(rows);  
+                        //resultsVoteVerify.push(rows[0].voto);
+                    }
+                    else{
+                        resolve(false);  
+                        //resultsVoteVerify.push(0);
+                    }
+                })
+
+                promisesArrayLikedUser.push(pLikedUser);
          });
  
+
+        var resLikedUser = await Promise.all(promisesArrayLikedUser); //risolve la promise per gli utenti che hanno messo like all'esperienza
+        var likedUserArray = [].concat.apply([], resLikedUser); //trasforma l'array di array in un singolo array
+        
      
          Promise.all(promisesArray).then( (values) => {
-             //resultsVoteVerify.push(values);
- 
+
              //Conversione data
              for(let i = 0; i < experiences.length; i++){
-                 //voto esperienza per l'utente loggato (true|false)
-                // console.log("****** VOTE VERIFY, ", values[i]);
- 
+
+                 experiences[i].liked_user = []; //inizializza array liked_user contenente gli utenti che hanno messo like all'esperienza 
+
+
+                 //voto esperienza per l'utente loggato (true|false) 
                  experiences[i]['flag_voto_esperienza'] = values[i];
+
+
+                 //Aggiunta della lista di utenti che hanno messo like all'esperienza
+                likedUserArray.forEach( likedUser => {
+                    
+                    if(experiences[i].id_esperienza == likedUser.id_esperienza && likedUser != false){ //inserisce l'utente che ha messo like all'esperienza
+                    //console.log("*** liked", likedUser.nome)
+
+                        experiences[i].liked_user.push({
+                            'id_utente' : likedUser.id_utente,
+                            'nome' : likedUser.nome,
+                            'cognome' : likedUser.cognome,
+                            'email' : likedUser.email,
+                            'badge' : likedUser.badge,
+                            'img' : service.server+likedUser.img
+                        }) 
+                    }
+                })
  
                  //data
                  let dataC = (experiences[i].data_creazione.toISOString().slice(0,10)); //Conversione data
@@ -301,6 +341,7 @@ exports.getMyProfile = async (req, res, next) => {
 
         // Recupera informazioni dei like dell'utente loggato
         var promisesArray = [];
+        var promisesArrayLikedUser = []; //array promises utenti che hanno messo like a ogni esperienza
         experiences.forEach(async exp => {
             
                 var p = new Promise(async (resolve, reject) => {
@@ -316,18 +357,57 @@ exports.getMyProfile = async (req, res, next) => {
                 })
 
                 promisesArray.push(p);
+
+
+                //Query per ottenere gli utenti che hanno messo like all'esperienza
+                var pLikedUser = new Promise(async (resolve, reject) => {
+                    const [rows, field] = await connection.query(query.getLikedUsers, [exp.id_esperienza, 'esperienza']); //NB. specificare il tipo di voto che si vuole considerare (esperienza || fotoCopertina || fotoGallery)
+                    if(rows[0] != undefined){
+                        resolve(rows);  
+                        //resultsVoteVerify.push(rows[0].voto);
+                    }
+                    else{
+                        resolve(false);  
+                        //resultsVoteVerify.push(0);
+                    }
+                })
+
+                promisesArrayLikedUser.push(pLikedUser);
+
         });
 
+
+        var resLikedUser = await Promise.all(promisesArrayLikedUser); //risolve la promise per gli utenti che hanno messo like all'esperienza
+        var likedUserArray = [].concat.apply([], resLikedUser); //trasforma l'array di array in un singolo array
+        
     
         Promise.all(promisesArray).then( (values) => {
             //resultsVoteVerify.push(values);
 
             //Conversione data
             for(let i = 0; i < experiences.length; i++){
-                //voto esperienza per l'utente loggato (true|false)
-                console.log("****** VOTE VERIFY, ", values[i]);
 
+                experiences[i].liked_user = []; //inizializza array liked_user contenente gli utenti che hanno messo like all'esperienza 
+
+                //voto esperienza per l'utente loggato (true|false)
                 experiences[i]['flag_voto_esperienza'] = values[i];
+
+                //Aggiunta della lista di utenti che hanno messo like all'esperienza
+                likedUserArray.forEach( likedUser => {
+                    
+                    if(experiences[i].id_esperienza == likedUser.id_esperienza && likedUser != false){ //inserisce l'utente che ha messo like all'esperienza
+                    //console.log("*** liked", likedUser.nome)
+
+                        experiences[i].liked_user.push({
+                            'id_utente' : likedUser.id_utente,
+                            'nome' : likedUser.nome,
+                            'cognome' : likedUser.cognome,
+                            'email' : likedUser.email,
+                            'badge' : likedUser.badge,
+                            'img' : service.server+likedUser.img
+                        }) 
+                    }
+                })
 
                 //data
                 let dataC = (experiences[i].data_creazione.toISOString().slice(0,10)); //Conversione data
@@ -1237,6 +1317,45 @@ exports.getMostLikeUser = async (req,res,next)=>{
             })
             
         });
+        
+        
+        
+    } catch (error) {
+        res.status(401).json({
+            mess : error
+        })
+    }
+}
+
+
+/**
+ * Restituisce gli utenti 
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ */
+exports.getLikedUsers = async (req,res,next)=>{
+
+    var idEsperienza = req.body.id_esperienza;
+    var tipoVoto = req.body.tipo_voto;
+    
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+    
+
+    await connection.beginTransaction(async function (err) { //avvia una nuova transazione
+        if (err) { throw err; }
+    });
+
+    try {
+        const [rows, field]= await connection.query(query.getLikedUsers,[idEsperienza, tipoVoto]);
+        var likedUsers = rows;
+
+        
+
+
+        res.status(201).send(likedUsers);
+            
+        
         
         
         

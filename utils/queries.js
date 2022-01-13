@@ -229,6 +229,10 @@ module.exports = {
 
     getCountVotoAmbassadorByLuogo : `SELECT tipo_ambassador, count_voto FROM ambassador WHERE id_luogo = ? AND tipo_ambassador = ?`, //recupera ambassador per una data categoria e un dato luogo
 
+    getLikedUsers : `SELECT * FROM heroku_a860383571f3622.voto JOIN utente
+                        ON voto.id_utente = utente.id_utente
+                        WHERE voto.id_esperienza = ? AND voto.tipo_voto = ?`,
+
     updateAmbassador : "UPDATE ambassador SET id_utente = ?, count_voto = ? WHERE id_luogo = ? AND tipo_ambassador = ?", //Aggiorna utente ambassador 
 
     updateCountAmbassadorByUser : "UPDATE utente SET count_ambassador = count_ambassador + ? WHERE id_utente = ?", //aggiorna il count ambassador dell'utente

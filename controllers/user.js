@@ -268,6 +268,179 @@ exports.getMyProfile = async (req, res, next) => {
 
 
 
+/**
+ * Restituisce le esperienze di un utente (con idUtente) e il flagVoto dell'utente loggato (idMyUtente)
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ */
+ exports.getUserExperiencesWithMyVote = async (req, res, next) => {
+
+    var idUtente = req.body.id_utente;
+    var idMyUtente = req.body.id_my_utente;
+
+    console.log("*** ", idUtente, idMyUtente)
+
+    const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
+
+    esperienzeDelLuogo = []; 
+
+    try {
+    
+    
+        const[rows_exp, field_exp]= await connection.query(query.getExperiencesByUser,[idUtente]) //recupera le esperienze dell'utente
+        var experiences = rows_exp;
+
+        const [rows_countEsperienze, field_countEsperienze] = await connection.query(query.getEsperienzeCountByUser, [idUtente]);
+        var experiencesCount = rows_countEsperienze; // recupera i count_esperienza per le esperienze dell'utente
+
+        const[rows_gallery, field_gallery] = await connection.query(query.getGalleryByEsperienzeOfUser, [idUtente]) //recupera le gallery delle esperienze dell'utente
+        var galleryComplete = rows_gallery;
+
+    
+        //console.log("*** ex1", experiences);
+        //console.log("*** ex2 ", experiencesCount);
+
+        //console.log("*** ex3 ", galleryComplete);
+
+        
+        //AGGIUNTA COUNT ESPERIENZA
+        experiences.forEach( exp => { //merge dati dell'esperienza con i dati del count dei voti
+            exp['count_esperienza'] = 0;
+            experiencesCount.forEach( count => {
+                if(exp.id_esperienza == count.id_esperienza){
+                    exp['count_esperienza'] = count.count_esperienza;
+                    exp['id_luogo'] = count.id_luogo;
+                }
+            })
+        })
+
+
+        //AGGIUNTA GALLERY ESPERIENZA
+        experiences.forEach( exp => {  
+            //exp.img = service.server+exp.img; //Immagine utente
+            exp.foto_copertina = service.server+exp.foto_copertina //immagine copertina
+            exp['gallery'] = [];
+            galleryComplete.forEach( gallery => {
+                if(exp.id_esperienza == gallery.id_esperienza){
+                   // console.log("*** GALLERY ", exp.gallery);
+                    exp.gallery.push(service.server+gallery.path); //immagine gallery
+                }
+            })
+        })
+
+       //ordinamento in base al count_esperienza (dall'esperienza più votata alla meno votata)
+        experiences.sort( function(a, b) {
+            return b.data_creazione - a.data_creazione
+        })
+        
+
+
+         // Recupera informazioni dei like dell'utente loggato
+         var promisesArray = [];
+         var promisesArrayLikedUser = []; //array promises utenti che hanno messo like a ogni esperienza
+         experiences.forEach(async exp => {
+             
+                 var p = new Promise(async (resolve, reject) => {
+                     const [rows, field] = await connection.query(query.verifyVotoTipo, [idMyUtente, exp.id_esperienza, 'esperienza']);
+                     if(rows[0] != undefined){
+                         resolve(true);  
+                         //resultsVoteVerify.push(rows[0].voto);
+                     }
+                     else{
+                         resolve(false);  
+                         //resultsVoteVerify.push(0);
+                     }
+                 })
+ 
+                 promisesArray.push(p);
+
+
+                 //Query per ottenere gli utenti che hanno messo like all'esperienza
+                var pLikedUser = new Promise(async (resolve, reject) => {
+                    const [rows, field] = await connection.query(query.getLikedUsers, [exp.id_esperienza, 'esperienza']); //NB. specificare il tipo di voto che si vuole considerare (esperienza || fotoCopertina || fotoGallery)
+                    if(rows[0] != undefined){
+                        resolve(rows);  
+                        //resultsVoteVerify.push(rows[0].voto);
+                    }
+                    else{
+                        resolve(false);  
+                        //resultsVoteVerify.push(0);
+                    }
+                })
+
+                promisesArrayLikedUser.push(pLikedUser);
+         });
+ 
+
+        var resLikedUser = await Promise.all(promisesArrayLikedUser); //risolve la promise per gli utenti che hanno messo like all'esperienza
+        var likedUserArray = [].concat.apply([], resLikedUser); //trasforma l'array di array in un singolo array
+        
+     
+         Promise.all(promisesArray).then( (values) => {
+
+             //Conversione data
+             for(let i = 0; i < experiences.length; i++){
+
+                 experiences[i].liked_user = []; //inizializza array liked_user contenente gli utenti che hanno messo like all'esperienza 
+
+
+                 //voto esperienza per l'utente loggato (true|false) 
+                 experiences[i]['flag_voto_esperienza'] = values[i];
+
+
+                 //Aggiunta della lista di utenti che hanno messo like all'esperienza
+                likedUserArray.forEach( likedUser => {
+                    
+                    if(experiences[i].id_esperienza == likedUser.id_esperienza && likedUser != false){ //inserisce l'utente che ha messo like all'esperienza
+                    //console.log("*** liked", likedUser.nome)
+
+                        experiences[i].liked_user.push({
+                            'id_utente' : likedUser.id_utente,
+                            'nome' : likedUser.nome,
+                            'cognome' : likedUser.cognome,
+                            'email' : likedUser.email,
+                            'badge' : likedUser.badge,
+                            'img' : service.server+likedUser.img
+                        }) 
+                    }
+                })
+ 
+                 //data
+                 let dataC = (experiences[i].data_creazione.toISOString().slice(0,10)); //Conversione data
+                 let y= dataC.slice(0,4)
+                 let m = dataC.slice(5,7);
+                 let d = dataC.slice(8-10);
+                 experiences[i].data_creazione = d+"-"+m+"-"+y;
+             }
+ 
+ 
+            // console.log("**** ", experiences)
+ 
+             res.status(201).send(experiences);
+ 
+ 
+         });
+    
+        
+       
+            
+    }
+    catch(err){ //se si verifica un errore 
+        console.log("err " , err);
+
+        res.status(401).json({
+            mess : err
+        })
+    }
+    finally{
+        await connection.release(); //rilascia la connessione al termine delle operazioni 
+    }
+}
+
+
+
+
 
 /**
  * Restituisce le esperienze dell'utente per uno specifico luogo

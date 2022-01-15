@@ -279,8 +279,6 @@ exports.getMyProfile = async (req, res, next) => {
     var idUtente = req.body.id_utente;
     var idMyUtente = req.body.id_my_utente;
 
-    console.log("*** ", idUtente, idMyUtente)
-
     const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
 
     esperienzeDelLuogo = []; 

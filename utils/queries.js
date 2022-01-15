@@ -33,6 +33,7 @@ module.exports = {
                                                     FROM esperienza JOIN creare_esperienza JOIN utente
                                                     ON esperienza.id_esperienza = creare_esperienza.id_esperienza
                                                         AND creare_esperienza.id_utente = utente.id_utente
+                                                        AND esperienza.descrizione <> ''
                                                     WHERE id_luogo = ? 
                                                     ORDER BY count_descrizione DESC, creare_esperienza.data_creazione DESC LIMIT 1
                                                 `,
@@ -51,6 +52,7 @@ module.exports = {
                                         FROM esperienza JOIN creare_esperienza JOIN utente
                                         ON esperienza.id_esperienza = creare_esperienza.id_esperienza
                                             AND creare_esperienza.id_utente = utente.id_utente
+                                            AND esperienza.accessibilita <> ''
                                         WHERE id_luogo = ? 
                                         ORDER BY count_accessibilita DESC, creare_esperienza.data_creazione DESC LIMIT 1
                                         `, 

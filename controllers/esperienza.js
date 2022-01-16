@@ -2216,6 +2216,10 @@ exports.updateEsperienza = async(req,res,next)=>{
     var flagFotoGallery = req.body.flag_fotogallery;
     var fotoGallery = [];
 
+    console.log("***** FLAG ", flagFotoCopertina, flagFotoGallery);
+
+    console.log("*** req.files ", req.files);
+
 
     if(req.files){
 
@@ -2229,7 +2233,11 @@ exports.updateEsperienza = async(req,res,next)=>{
             fotoCopertina=fotoGallery[0]
         }
         else{ //Se non c'è la foto copertina
+            console.log("*** ORA METTO LA COVER PHOTO ", fotoGallery)
+
             fotoGallery.push('/images/default_images/default_cover_photo.png') //inserisce come prima foto la foto copertina
+
+            console.log("*** HO MESSO LA COVER PHOTO ", fotoGallery)
 
             for(var i=0; i<req.files.length; i++){ //recupera foto gallery
                 img=req.files[i].path.slice(6)
@@ -2268,25 +2276,25 @@ exports.updateEsperienza = async(req,res,next)=>{
         if(accessibilita!=null)
         {
             await connection.query(queries.updateAccessibilita,[accessibilita,idEsperienza])
-            
-
-           
+                   
         }
         
-        if(fotoCopertina!=null)
+        if(flagFotoCopertina == 'true')
         {
-            await connection.query(queries.updateFotoCopertina,[fotoCopertina,idEsperienza])
-              
+            await connection.query(queries.updateFotoCopertina,[fotoCopertina,idEsperienza]) 
         }
 
-        if(fotoGallery != []){
+        if(flagFotoGallery == 'true'){
             const [rows_gallery,field_gallery]= await connection.query(query.getGallery,[idEsperienza])
             
             idGallery= rows_gallery[0].id_gallery;
-            console.log(idGallery)
+            console.log("idGallery: ",idGallery)
+
+            await connection.query(query.deleteFotoByGallery, [idGallery])
+
 
             for(var i=1; i<fotoGallery.length; i++){
-                console.log(fotoGallery[i])
+                console.log("gallery da inserire sul db: ", fotoGallery[i])
                 await connection.query(query.insertFoto,[fotoGallery[i],idGallery])
             }
 

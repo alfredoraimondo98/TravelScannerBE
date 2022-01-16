@@ -252,6 +252,7 @@ module.exports = {
     insertUserCreateExperience : "INSERT INTO creare_esperienza(id_utente, id_esperienza, data_creazione) VALUES (?, ?, ?)",
     createGallery : "INSERT INTO gallery(count_gallery, id_esperienza) VALUES (?, ?)",
     insertFoto : "INSERT INTO foto(path, id_gallery) VALUES (?, ?)",
+    deleteFotoByGallery : "DELETE FROM foto WHERE id_gallery = ?",
     insertAmbassador : "INSERT INTO ambassador(id_utente, id_luogo, tipo_ambassador, count_voto) VALUES (?, ?, ?, ?)",
     deleteAmbassador: "DELETE FROM ambassador WHERE id_utente = ? AND id_luogo = ? AND tipo_ambassador = ?",
     verifyMail : "SELECT email FROM utente WHERE email = ?",

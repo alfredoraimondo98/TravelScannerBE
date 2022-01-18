@@ -44,7 +44,7 @@ exports.getRecentlyUsersPhoto = async (req, res, next) => {
             userLimited.push(users[i]);
         } 
 
-        res.send(userLimited);
+        res.status(201).send(userLimited);
 
         /*res.status(201).json({
             foto : user

@@ -7,7 +7,7 @@ const luogoController = require("../controllers/luogo");
 
 
 router.post('/createPlace', 
-    upload.array('images', 5 ), //caricamento foto copertina luogo (.[0] -> foto copertina ; .[1] - [4] foto gallery)
+    upload.array('images', 10), //caricamento foto copertina luogo (.[0] -> foto copertina ; .[1] - [4] foto gallery)
     [
         //controllo valori input
     ],

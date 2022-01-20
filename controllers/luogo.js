@@ -40,7 +40,7 @@ exports.createPlace = async (req, res, next) =>{
     // ** dati per la creazione della prima esperienza (ricevuti in input)
     var descrizione = req.body.descrizione;
     var countDescrizione = 0;
-    var accessibilita = req.body.descrizione;
+    var accessibilita = req.body.accessibilita;
     var countAccessibilita = 0;
     var fotoCopertina;
     var arrayGallery = [];

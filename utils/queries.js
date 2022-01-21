@@ -4,7 +4,7 @@ module.exports = {
     getUserById : "SELECT * FROM utente WHERE id_utente = ?",
     getAllUser: " SELECT * FROM utente",
     getUserByNameSurname: "SELECT * FROM utente WHERE nome LIKE ? OR cognome LIKE ?",
-    getPlaceByTitle: "SELECT * from luogo WHERE titolo LIKE ? ",
+    getPlaceByTitle: "SELECT * from luogo WHERE titolo LIKE ? OR citta LIKE ? OR nazione LIKE ?",
     getAllLuoghi : "SELECT * FROM luogo",
     getGallery: "SELECT id_gallery FROM gallery WHERE id_esperienza = ?",
     getCountPostByIdUser : "SELECT COUNT(*) as count FROM creare_esperienza WHERE id_utente = ?", //recupera il numero di esperienze create dall'utente

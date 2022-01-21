@@ -1280,6 +1280,7 @@ exports.searchUser = async(req,res,next) =>{
 exports.serchAll = async(req,res,next) => {
 
     parametro_ricerca=req.body.parametro_ricerca+"%";
+   
 
     const connection = await database.getConnection(); //recupera una connessione dal pool di connessioni al dabatase
 
@@ -1292,7 +1293,8 @@ exports.serchAll = async(req,res,next) => {
 
         const [rows_user, field_user] = await connection.query(query.getUserByNameSurname,[parametro_ricerca,parametro_ricerca]);
 
-        const [rows_place, field_place] = await connection.query(query.getPlaceByTitle,[parametro_ricerca]);
+        const [rows_place, field_place] = await connection.query(query.getPlaceByTitle,[parametro_ricerca,parametro_ricerca,parametro_ricerca]);
+        console.log(rows_place)
 
     
         

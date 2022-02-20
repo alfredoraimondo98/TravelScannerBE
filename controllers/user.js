@@ -1463,7 +1463,7 @@ exports.getMostLikeUser = async (req,res,next)=>{
                     
                     
                     resolve({utente: user,
-                             somma_voti_esperienze : rows[0].somma_voti_esperienze});  
+                             count_like : rows[0].somma_voti_esperienze});  
                 }
                 else{
                     resolve(0);  
@@ -1477,23 +1477,26 @@ exports.getMostLikeUser = async (req,res,next)=>{
         
         
             values.sort((a,b)=>{
-                return b.somma_voti_esperienze - a.somma_voti_esperienze
-            })
+                return b.count_like - a.count_like
+            }),
 
             values.forEach( user => {
                 user.utente.img = service.server+user.utente.img; //immagine utente con indirizzo server 
-            })
-
-
+            }),
+        
+            
             res.status(201).json({
                 classifica : values
             })
-            
         });
+
+      
         
         
         
-    } catch (error) {
+    } 
+    
+    catch (error) {
         res.status(401).json({
             mess : error
         })

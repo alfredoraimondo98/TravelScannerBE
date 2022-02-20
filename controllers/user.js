@@ -40,9 +40,12 @@ exports.getRecentlyUsersPhoto = async (req, res, next) => {
         if(users.length < 10){
             userLimited = users;
         }
-        for(let i = 0; i < 10; i++){
-            userLimited.push(users[i]);
-        } 
+        else{
+            for(let i = 0; i < 10; i++){
+                userLimited.push(users[i]);
+            } 
+        }
+        
 
         res.status(201).send(userLimited);
 
